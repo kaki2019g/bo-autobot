@@ -34,9 +34,23 @@
   <!-- End Google Tag Manager -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function() {
+      var host = window.location.hostname;
+      var path = window.location.pathname;
+      var base = "/";
+      if (host.endsWith("github.io")) {
+        var parts = path.split("/").filter(Boolean);
+        base = parts.length ? "/" + parts[0] + "/" : "/";
+      }
+      var baseTag = document.createElement("base");
+      baseTag.href = base;
+      document.head.appendChild(baseTag);
+    })();
+  </script>
   <title>カート</title>
-  <link rel="icon" href="/assets/img/common/favicon.ico">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="icon" href="assets/img/common/favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
 
@@ -66,7 +80,7 @@
                   <a href="#" class="remove" aria-label="Remove item">&times;</a>
                 </td>
                 <td class="product-thumbnail">
-                  <a href="/product/bo-autobot.html"><img src="/assets/img/item/demo.png" alt="BO-AutoBot"></a>
+                  <a href="/product/bo-autobot.html"><img src="assets/img/item/demo.png" alt="BO-AutoBot"></a>
                 </td>
                 <td class="product-name" data-title="Product">
                   <a href="/product/bo-autobot.html">BO-AutoBot</a>
@@ -114,7 +128,7 @@
     </div>
   </section>
 </main><div id="site-footer"></div>
-<script src="/assets/js/include.js"></script>
+<script src="assets/js/include.js"></script>
 </body>
 
 </html>

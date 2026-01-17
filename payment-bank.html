@@ -34,9 +34,23 @@
   <!-- End Google Tag Manager -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function() {
+      var host = window.location.hostname;
+      var path = window.location.pathname;
+      var base = "/";
+      if (host.endsWith("github.io")) {
+        var parts = path.split("/").filter(Boolean);
+        base = parts.length ? "/" + parts[0] + "/" : "/";
+      }
+      var baseTag = document.createElement("base");
+      baseTag.href = base;
+      document.head.appendChild(baseTag);
+    })();
+  </script>
   <title>銀行振込のご案内</title>
-  <link rel="icon" href="/assets/img/common/favicon.ico">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="icon" href="assets/img/common/favicon.ico">
+  <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
 
@@ -61,7 +75,7 @@
       </div>
     </div>
   </main><div id="site-footer"></div>
-<script src="/assets/js/include.js"></script>
+<script src="assets/js/include.js"></script>
 </body>
 
 </html>
