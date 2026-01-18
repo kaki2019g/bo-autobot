@@ -115,8 +115,17 @@
 </form>
                 </div>
             </div>
-        </main><div id="site-footer"></div>
+</main><div id="site-footer"></div>
 <script src="assets/js/include.js"></script>
+<script>
+  (function() {
+    var form = document.querySelector('form.wpcf7-form');
+    if (!form) {
+      return;
+    }
+    form.setAttribute('action', new URL('contact-confirm.html', window.location.href).toString());
+  })();
+</script>
 </body>
 
 </html>
