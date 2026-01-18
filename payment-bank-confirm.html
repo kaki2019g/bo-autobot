@@ -67,7 +67,7 @@
 
         <p class="p-contact__lead">以下の内容で申し込みを確定します。よろしければ「注文を確定する」を押してください。</p>
 
-        <form class="wpcf7-form" action="/payment-bank-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbw4YWWxECYld21hPHUlAPDJnPFbb1iyhE6aXTnAea7Y9hbiuQ3fNLGfKC9jnNjnOg/exec">
+        <form class="wpcf7-form" action="payment-bank-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbw4YWWxECYld21hPHUlAPDJnPFbb1iyhE6aXTnAea7Y9hbiuQ3fNLGfKC9jnNjnOg/exec">
           <input type="hidden" name="action">
           <input type="hidden" name="product_id">
           <input type="hidden" name="product_name">
@@ -192,7 +192,7 @@
         if (!data || !data.ok) {
           throw new Error('Request failed');
         }
-        window.location.href = '/payment-bank-done.html';
+        window.location.href = 'payment-bank-done.html';
       }).catch(function() {
         alert('送信に失敗しました。時間をおいて再度お試しください。');
         form.dataset.submitting = 'false';

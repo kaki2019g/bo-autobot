@@ -68,7 +68,7 @@
 
                     <p class="p-contact__lead">以下の内容で送信します。よろしければ「送信する」を押してください。</p>
 
-                    <form class="wpcf7-form" action="/contact-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec">
+                    <form class="wpcf7-form" action="contact-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec">
                       <input type="hidden" name="your-name">
                       <input type="hidden" name="your-email">
                       <input type="hidden" name="your-subject">
@@ -156,7 +156,7 @@
         }
         return response.json();
       }).then(function() {
-        window.location.href = '/contact-done.html';
+        window.location.href = 'contact-done.html';
       }).catch(function() {
         alert('送信に失敗しました。時間をおいて再度お試しください。');
         form.dataset.submitting = 'false';
