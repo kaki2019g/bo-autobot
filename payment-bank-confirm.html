@@ -112,6 +112,7 @@
 <script src="assets/js/include.js"></script>
 <script>
   (function() {
+    var doneUrl = new URL('payment-bank-done.html', window.location.href).toString();
     var params = new URLSearchParams(window.location.search);
     var fields = [
       'action',
@@ -160,6 +161,7 @@
     if (!form) {
       return;
     }
+    form.setAttribute('action', doneUrl);
     form.addEventListener('submit', function(event) {
       event.preventDefault();
       if (form.dataset.submitting === 'true') {
@@ -192,7 +194,7 @@
         if (!data || !data.ok) {
           throw new Error('Request failed');
         }
-        window.location.href = 'payment-bank-done.html';
+        window.location.href = doneUrl;
       }).catch(function() {
         alert('送信に失敗しました。時間をおいて再度お試しください。');
         form.dataset.submitting = 'false';

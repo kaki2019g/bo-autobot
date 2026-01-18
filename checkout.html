@@ -150,12 +150,13 @@
     form.addEventListener('submit', function(event) {
       var methodInput = form.querySelector('input[name="payment_method"]:checked');
       var method = methodInput ? methodInput.value : '';
+      var confirmUrl = new URL('payment-bank-confirm.html', window.location.href).toString();
       if (method !== 'bank_transfer') {
         return;
       }
       event.preventDefault();
       var payload = new URLSearchParams(new FormData(form));
-      window.location.href = 'payment-bank-confirm.html?' + payload.toString();
+      window.location.href = confirmUrl + '?' + payload.toString();
     });
   })();
 </script>
