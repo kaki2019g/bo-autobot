@@ -1,4 +1,5 @@
 ﻿function doPost(e) {
+  Logger.log("params: %s", JSON.stringify(e && e.parameter ? e.parameter : {}));
   var body = normalizePayload_(e);
 
   var action = body.action || "";
@@ -12,28 +13,29 @@
 
 function handleCreateOrder_(payload) {
   var config = getConfig_();
+  Logger.log("PAYMENT_DONE_URL: %s", config.PAYMENT_DONE_URL);
   validateOrderPayload_(payload);
 
   var orderId = Utilities.getUuid();
   var now = new Date();
   var paymentMethod = payload.payment_method;
-  if (!paymentMethod) {
-    return htmlResponse_("支払い方法が指定されていません。");
+  if (paymentMethod !== "paypal") {
+    return htmlResponse_("このエンドポイントはPayPal決済専用です。");
   }
   var paypalOrderId = "";
   var approvalUrl = "";
 
-  if (paymentMethod === "paypal") {
-    var paypalResponse = createPayPalOrder_(payload, orderId, config);
-    paypalOrderId = paypalResponse.id;
-    approvalUrl = extractApprovalUrl_(paypalResponse);
-  }
+  var paypalResponse = createPayPalOrder_(payload, orderId, config);
+  paypalOrderId = paypalResponse.id;
+  approvalUrl = extractApprovalUrl_(paypalResponse);
+  Logger.log("PayPal order id: %s", paypalOrderId);
+  Logger.log("PayPal approval url: %s", approvalUrl);
 
   appendOrder_(config, {
     order_id: orderId,
     paypal_order_id: paypalOrderId,
-    status: paymentMethod === "paypal" ? "pending_payment" : "pending_bank_transfer",
-    payment_method: paymentMethod,
+    status: "pending_payment",
+    payment_method: "paypal",
     product_id: payload.product_id,
     product_name: payload.product_name,
     amount: payload.amount,
@@ -45,18 +47,11 @@ function handleCreateOrder_(payload) {
     updated_at: now
   });
 
-  if (paymentMethod === "bank_transfer") {
-    sendBankTransferEmail_(config, payload.customer);
+  if (!approvalUrl) {
+    return htmlResponse_("PayPalの決済URLを取得できませんでした。");
   }
 
-  if (paymentMethod === "paypal") {
-    if (!approvalUrl) {
-      return htmlResponse_("PayPalの決済URLを取得できませんでした。");
-    }
-    return redirectResponse_(approvalUrl);
-  }
-
-  return redirectResponse_(config.PAYMENT_DONE_URL || config.PAYPAL_RETURN_URL || "");
+  return redirectResponse_(approvalUrl);
 }
 
 function handleWebhook_(e, eventBody) {
@@ -294,19 +289,6 @@ function sendProductEmail_(config, email, name) {
   GmailApp.sendEmail(email, subject, body);
 }
 
-function sendBankTransferEmail_(config, customer) {
-  var subject = "【BO-AutoBot】銀行振込のご案内";
-  var body = customer.last_name + " " + customer.first_name + " 様\n\n" +
-    "ご注文ありがとうございます。以下の口座へお振込をお願いいたします。\n\n" +
-    "銀行名：" + config.BANK_NAME + "\n" +
-    "支店名：" + config.BANK_BRANCH + "\n" +
-    "口座種別：" + config.BANK_TYPE + "\n" +
-    "口座番号：" + config.BANK_NUMBER + "\n" +
-    "口座名義：" + config.BANK_HOLDER + "\n\n" +
-    "ご入金確認後、商品をお送りいたします。";
-  GmailApp.sendEmail(customer.email, subject, body);
-}
-
 function getSheet_(config) {
   var ss = SpreadsheetApp.openById(config.SHEET_ID);
   return ss.getSheetByName(config.SHEET_NAME);
@@ -357,7 +339,8 @@ function redirectResponse_(url) {
   }
   var html = '<!doctype html><html><head><meta charset="UTF-8">' +
     '<meta http-equiv="refresh" content="0;URL=' + url + '">' +
-    '</head><body>Redirecting...</body></html>';
+    '<script>window.location.replace("' + url + '");</script>' +
+    '</head><body>Redirecting...<br><a href="' + url + '">Continue</a></body></html>';
   return HtmlService.createHtmlOutput(html);
 }
 
@@ -386,13 +369,7 @@ function getConfig_() {
     PAYPAL_ENV: props.getProperty("PAYPAL_ENV") || "sandbox",
     PAYPAL_RETURN_URL: props.getProperty("PAYPAL_RETURN_URL"),
     PAYPAL_CANCEL_URL: props.getProperty("PAYPAL_CANCEL_URL"),
-    PAYMENT_DONE_URL: props.getProperty("PAYMENT_DONE_URL"),
-    PRODUCT_DOWNLOAD_URL: props.getProperty("PRODUCT_DOWNLOAD_URL") || "https://example.com/download",
-    BANK_NAME: props.getProperty("BANK_NAME"),
-    BANK_BRANCH: props.getProperty("BANK_BRANCH"),
-    BANK_TYPE: props.getProperty("BANK_TYPE"),
-    BANK_NUMBER: props.getProperty("BANK_NUMBER"),
-    BANK_HOLDER: props.getProperty("BANK_HOLDER")
+    PRODUCT_DOWNLOAD_URL: props.getProperty("PRODUCT_DOWNLOAD_URL") || "https://example.com/download"
   };
 }
 

@@ -48,7 +48,7 @@
       document.head.appendChild(baseTag);
     })();
   </script>
-  <title>お問い合わせ確認</title>
+  <title>銀行振込の確認</title>
   <link rel="icon" href="assets/img/common/favicon.ico">
   <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -59,53 +59,72 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PQ8S3354" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   <div id="site-header"></div><main id="l-main">
+    <div class="l-container p-contact">
+      <div class="l-inner">
+        <div class="p-contact__top">
+          <h2 class="p-contact__h2 sec-h2">銀行振込の確認</h2>
+        </div>
 
-            <div id="" class="l-container p-contact">
-                <div class="l-inner">
-                    <div class="p-contact__top">
-                        <h2 class="p-contact__h2 sec-h2">お問い合わせ確認</h2>
-                    </div>
+        <p class="p-contact__lead">以下の内容で申し込みを確定します。よろしければ「注文を確定する」を押してください。</p>
 
-                    <p class="p-contact__lead">以下の内容で送信します。よろしければ「送信する」を押してください。</p>
-
-                    <form class="wpcf7-form" action="/contact-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec">
-                      <input type="hidden" name="your-name">
-                      <input type="hidden" name="your-email">
-                      <input type="hidden" name="your-subject">
-                      <input type="hidden" name="your-message">
-                      <input type="hidden" name="agree-privacy">
-                      <table class="p-contact__confirm">
-                        <tr>
-                          <th>お名前</th>
-                          <td data-field="your-name"></td>
-                        </tr>
-                        <tr>
-                          <th>メールアドレス</th>
-                          <td data-field="your-email"></td>
-                        </tr>
-                        <tr>
-                          <th>お問い合わせ内容</th>
-                          <td data-field="your-subject"></td>
-                        </tr>
-                        <tr>
-                          <th>お問い合わせ詳細</th>
-                          <td data-field="your-message" class="confirm-text"></td>
-                        </tr>
-                      </table>
-                      <div class="submit">
-                        <button type="button" class="wpcf7-submit" id="back-button">修正する</button>
-                        <button type="submit" class="wpcf7-submit">送信する</button>
-                        <p class="p-contact__loading" id="contact-loading" aria-live="polite">送信中です…</p>
-                      </div>
-                    </form>
-                </div>
-            </div>
-        </main><div id="site-footer"></div>
+        <form class="wpcf7-form" action="/payment-bank-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbw4YWWxECYld21hPHUlAPDJnPFbb1iyhE6aXTnAea7Y9hbiuQ3fNLGfKC9jnNjnOg/exec">
+          <input type="hidden" name="action">
+          <input type="hidden" name="product_id">
+          <input type="hidden" name="product_name">
+          <input type="hidden" name="amount">
+          <input type="hidden" name="currency">
+          <input type="hidden" name="payment_method">
+          <input type="hidden" name="billing_first_name">
+          <input type="hidden" name="billing_last_name">
+          <input type="hidden" name="billing_email">
+          <input type="hidden" name="order_comments">
+          <table class="p-contact__confirm">
+            <tr>
+              <th>お名前</th>
+              <td data-field="customer-name"></td>
+            </tr>
+            <tr>
+              <th>メールアドレス</th>
+              <td data-field="billing_email"></td>
+            </tr>
+            <tr>
+              <th>商品名</th>
+              <td data-field="product_name"></td>
+            </tr>
+            <tr>
+              <th>金額</th>
+              <td data-field="amount"></td>
+            </tr>
+            <tr>
+              <th>備考</th>
+              <td data-field="order_comments"></td>
+            </tr>
+          </table>
+          <div class="submit">
+            <button type="button" class="wpcf7-submit" id="back-button">修正する</button>
+            <button type="submit" class="wpcf7-submit">注文を確定する</button>
+            <p class="p-contact__loading" id="payment-loading" aria-live="polite">送信中です…</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main><div id="site-footer"></div>
 <script src="assets/js/include.js"></script>
 <script>
   (function() {
     var params = new URLSearchParams(window.location.search);
-    var fields = ['your-name', 'your-email', 'your-subject', 'your-message', 'agree-privacy'];
+    var fields = [
+      'action',
+      'product_id',
+      'product_name',
+      'amount',
+      'currency',
+      'payment_method',
+      'billing_first_name',
+      'billing_last_name',
+      'billing_email',
+      'order_comments'
+    ];
     fields.forEach(function(name) {
       var value = params.get(name) || '';
       var cell = document.querySelector('[data-field="' + name + '"]');
@@ -117,6 +136,20 @@
         input.value = value;
       }
     });
+    var lastName = params.get('billing_last_name') || '';
+    var firstName = params.get('billing_first_name') || '';
+    var nameCell = document.querySelector('[data-field="customer-name"]');
+    if (nameCell) {
+      nameCell.textContent = (lastName + ' ' + firstName).trim();
+    }
+    var amountCell = document.querySelector('[data-field="amount"]');
+    var amountValue = params.get('amount') || '';
+    if (amountCell && amountValue) {
+      var amountNumber = Number(amountValue);
+      if (!isNaN(amountNumber)) {
+        amountCell.textContent = '¥' + amountNumber.toLocaleString('ja-JP');
+      }
+    }
     var backButton = document.getElementById('back-button');
     if (backButton) {
       backButton.addEventListener('click', function() {
@@ -133,7 +166,7 @@
         return;
       }
       form.dataset.submitting = 'true';
-      var loading = document.getElementById('contact-loading');
+      var loading = document.getElementById('payment-loading');
       if (loading) {
         loading.style.display = 'block';
       }
@@ -155,8 +188,11 @@
           throw new Error('Request failed');
         }
         return response.json();
-      }).then(function() {
-        window.location.href = '/contact-done.html';
+      }).then(function(data) {
+        if (!data || !data.ok) {
+          throw new Error('Request failed');
+        }
+        window.location.href = '/payment-bank-done.html';
       }).catch(function() {
         alert('送信に失敗しました。時間をおいて再度お試しください。');
         form.dataset.submitting = 'false';

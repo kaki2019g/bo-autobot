@@ -61,7 +61,7 @@
   <div id="site-header"></div><main id="l-main" class="l-main p-checkout">
   <div class="l-inner">
     <div class="woocommerce">
-      <form name="checkout" class="checkout woocommerce-checkout" action="https://script.google.com/macros/s/AKfycbywM4A3MuEpb27WNq5aN-dzpMuEVLrX1pm1jG1zOtqZjUQt_Q5gjJNS08WscNYgSA/exec" method="post">
+      <form name="checkout" class="checkout woocommerce-checkout" action="https://script.google.com/macros/s/AKfycbywM4A3MuEpb27WNq5aN-dzpMuEVLrX1pm1jG1zOtqZjUQt_Q5gjJNS08WscNYgSA/exec" method="post" data-bank-endpoint="https://script.google.com/macros/s/AKfycbw4YWWxECYld21hPHUlAPDJnPFbb1iyhE6aXTnAea7Y9hbiuQ3fNLGfKC9jnNjnOg/exec">
         <input type="hidden" name="action" value="create_order">
         <input type="hidden" name="product_id" value="bo-autobot">
         <input type="hidden" name="product_name" value="BO-AutoBot">
@@ -141,7 +141,24 @@
   </div>
 </main><div id="site-footer"></div>
 <script src="assets/js/include.js"></script>
+<script>
+  (function() {
+    var form = document.querySelector('form.checkout');
+    if (!form) {
+      return;
+    }
+    form.addEventListener('submit', function(event) {
+      var methodInput = form.querySelector('input[name="payment_method"]:checked');
+      var method = methodInput ? methodInput.value : '';
+      if (method !== 'bank_transfer') {
+        return;
+      }
+      event.preventDefault();
+      var payload = new URLSearchParams(new FormData(form));
+      window.location.href = '/payment-bank-confirm.html?' + payload.toString();
+    });
+  })();
+</script>
 </body>
 
 </html>
-
