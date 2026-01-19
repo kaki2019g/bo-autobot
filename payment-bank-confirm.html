@@ -48,7 +48,7 @@
       document.head.appendChild(baseTag);
     })();
   </script>
-  <title>銀行振込の確認</title>
+  <title>注文内容の確認</title>
   <link rel="icon" href="assets/img/common/favicon.ico">
   <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -58,11 +58,12 @@
   <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PQ8S3354" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <div id="site-header"></div><main id="l-main">
+  <div id="site-header"></div>
+  <main id="l-main">
     <div class="l-container p-contact">
       <div class="l-inner">
         <div class="p-contact__top">
-          <h1 class="p-contact__h2 sec-h2">銀行振込の確認</h1>
+          <h1 class="p-contact__h2 sec-h2">注文内容の確認</h1>
         </div>
 
         <p class="p-contact__lead">以下の内容で申し込みを確定します。よろしければ「注文を確定する」を押してください。</p>
@@ -110,160 +111,10 @@
         </form>
       </div>
     </div>
-  </main><div id="site-footer"></div>
-<script src="assets/js/include.js"></script>
-<script>
-  (function() {
-    var doneUrl = new URL('payment-bank-done.html', window.location.href).toString();
-    var form = document.querySelector('form.wpcf7-form');
-    if (!form) {
-      return;
-    }
-    var error = document.getElementById('payment-error');
-    var raw = null;
-    var data = null;
-    try {
-      raw = sessionStorage.getItem('bankOrderData');
-      data = raw ? JSON.parse(raw) : null;
-    } catch (err) {
-      data = null;
-    }
-    var required = ['billing_first_name', 'billing_last_name', 'billing_email', 'product_name', 'amount', 'currency'];
-    var isValid = data && required.every(function(key) {
-      return data[key];
-    });
-    if (!isValid && error) {
-      error.textContent = '注文情報が見つかりませんでした。購入手続きからやり直してください。';
-    }
-    var fields = [
-      'action',
-      'product_id',
-      'product_name',
-      'amount',
-      'currency',
-      'payment_method',
-      'billing_first_name',
-      'billing_last_name',
-      'billing_email',
-      'order_comments',
-      'source'
-    ];
-    fields.forEach(function(name) {
-      var value = data && data[name] ? data[name] : '';
-      if (name === 'payment_method' && !value) {
-        value = 'bank_transfer';
-      }
-      if (name === 'source' && !value) {
-        value = 'bank_confirm';
-      }
-      var cell = document.querySelector('[data-field="' + name + '"]');
-      if (cell) {
-        cell.textContent = value;
-      }
-      var input = document.querySelector('input[type="hidden"][name="' + name + '"]');
-      if (input) {
-        input.value = value;
-      }
-    });
-    var lastName = data && data.billing_last_name ? data.billing_last_name : '';
-    var firstName = data && data.billing_first_name ? data.billing_first_name : '';
-    var nameCell = document.querySelector('[data-field="customer-name"]');
-    if (nameCell) {
-      nameCell.textContent = (lastName + ' ' + firstName).trim();
-    }
-    var amountCell = document.querySelector('[data-field="amount"]');
-    var amountValue = data && data.amount ? data.amount : '';
-    if (amountCell && amountValue) {
-      var amountNumber = Number(amountValue);
-      if (!isNaN(amountNumber)) {
-        amountCell.textContent = '¥' + amountNumber.toLocaleString('ja-JP');
-      }
-    }
-    var notesCell = document.querySelector('[data-field="order_comments"]');
-    if (notesCell && !(data && data.order_comments)) {
-      notesCell.textContent = '（未入力）';
-    }
-    var backButton = document.getElementById('back-button');
-    if (backButton) {
-      backButton.addEventListener('click', function() {
-        if (history.length > 1) {
-          history.back();
-        } else {
-          window.location.href = new URL('checkout.html', window.location.href).toString();
-        }
-      });
-    }
-    var submitButton = form.querySelector('button[type="submit"]');
-    if (!isValid && submitButton) {
-      submitButton.disabled = true;
-    }
-    form.setAttribute('action', doneUrl);
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      if (!isValid) {
-        return;
-      }
-      if (form.dataset.submitting === 'true') {
-        return;
-      }
-      form.dataset.submitting = 'true';
-      var loading = document.getElementById('payment-loading');
-      if (loading) {
-        loading.style.display = 'block';
-      }
-      var buttons = form.querySelectorAll('.wpcf7-submit');
-      buttons.forEach(function(button) {
-        button.disabled = true;
-      });
-      var endpoint = form.getAttribute('data-gas-endpoint');
-      if (!endpoint || endpoint.indexOf('script.google.com') === -1) {
-        if (error) {
-          error.textContent = '送信先の設定が未完了です。お手数ですがお問い合わせください。';
-        }
-        form.dataset.submitting = 'false';
-        if (loading) {
-          loading.style.display = 'none';
-        }
-        buttons.forEach(function(button) {
-          button.disabled = false;
-        });
-        return;
-      }
-      var payload = new URLSearchParams(new FormData(form));
-      fetch(endpoint, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-        },
-        body: payload.toString()
-      }).then(function(response) {
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
-        return response.json();
-      }).then(function(data) {
-        if (!data || !data.ok) {
-          throw new Error('Request failed');
-        }
-        try {
-          sessionStorage.removeItem('bankOrderData');
-        } catch (err) {
-        }
-        window.location.href = doneUrl;
-      }).catch(function() {
-        alert('送信に失敗しました。時間をおいて再度お試しください。');
-        form.dataset.submitting = 'false';
-        if (loading) {
-          loading.style.display = 'none';
-        }
-        buttons.forEach(function(button) {
-          button.disabled = false;
-        });
-      });
-    });
-  })();
-</script>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/include.js"></script>
+  <script src="assets/js/payment-bank-confirm.js"></script>
 </body>
 
 </html>

@@ -61,7 +61,7 @@
     try {
       sessionStorage.setItem("bankOrderData", JSON.stringify(payload));
     } catch (err) {
-      showMessage("ブラウザの設定により銀行振込の確認画面へ進めません。", true);
+      showMessage("ブラウザの設定により注文内容の確認画面へ進めません。", true);
       return;
     }
 
