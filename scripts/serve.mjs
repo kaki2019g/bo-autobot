@@ -29,10 +29,18 @@ function send(res, status, body, headers = {}) {
   res.end(body);
 }
 
+function isSafePath(targetPath) {
+  const relative = path.relative(root, targetPath);
+  return !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
 async function resolvePath(urlPath) {
   const cleanPath = decodeURIComponent(urlPath.split("?")[0]).replace(/\/+$/, "");
   const candidate = cleanPath === "" ? "/" : cleanPath;
   const absolute = path.join(root, candidate);
+  if (!isSafePath(absolute)) {
+    return null;
+  }
 
   try {
     const stats = await stat(absolute);
@@ -43,6 +51,9 @@ async function resolvePath(urlPath) {
     return { filePath: absolute };
   } catch {
     const htmlCandidate = path.join(root, `${candidate}.html`);
+    if (!isSafePath(htmlCandidate)) {
+      return null;
+    }
     try {
       const stats = await stat(htmlCandidate);
       if (stats.isFile()) {

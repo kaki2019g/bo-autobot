@@ -538,16 +538,6 @@ button {
   width: 100%;
   height: 100%;
 }
-.l-header__nav--cart {
-  width: 6%;
-  max-width: 55px;
-}
-@media screen and (max-width: 768px) {
-  .l-header__nav--cart {
-    width: 100%;
-    max-width: unset;
-  }
-}
 .l-header__nav--contact a {
   border-radius: 15px;
   background: #FF48A0;
@@ -1788,6 +1778,20 @@ button {
   margin: 20px 0 0;
   text-align: center;
   font-weight: bold;
+}
+.p-contact__error {
+  margin: 20px auto 0;
+  max-width: 560px;
+  text-align: center;
+  font-weight: 600;
+  color: #c0392b;
+}
+.p-contact__noscript {
+  margin: 20px auto 0;
+  max-width: 560px;
+  text-align: center;
+  font-weight: 600;
+  color: #c0392b;
 }
 .confirm-text {
   overflow-wrap: anywhere;
@@ -3264,6 +3268,27 @@ button {
   background-color: #fff;
   color: #333;
 }
+.p-cart__title {
+  margin: 0 0 16px;
+  text-align: center;
+}
+@media screen and (max-width: 768px) {
+  .p-cart__title {
+    text-align: left;
+  }
+}
+.p-cart__note {
+  margin: 0 0 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+.p-cart .is-disabled,
+.p-cart .button[disabled],
+.p-cart input[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
 .p-checkout .woocommerce .woocommerce-checkout .woocommerce-checkout-review-order .woocommerce-checkout-payment .button {
   background-color: #333;
@@ -3341,6 +3366,28 @@ button {
   margin: 6px 0 0 26px;
   font-size: 14px;
   color: #666;
+}
+.p-checkout__top {
+  text-align: center;
+  margin: 0 0 24px;
+}
+@media screen and (max-width: 768px) {
+  .p-checkout__top {
+    text-align: left;
+  }
+}
+.p-checkout__note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #666;
+}
+.p-checkout__noscript {
+  margin: 0 0 16px;
+  font-weight: 600;
+  color: #c0392b;
+}
+.p-checkout .payment_methods .is-disabled {
+  opacity: 0.6;
 }
 .p-checkout .place-order .button {
   border: solid 2px #333;

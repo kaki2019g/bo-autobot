@@ -61,6 +61,8 @@
   <div id="site-header"></div><main id="l-main" class="l-main cart">
   <section class="p-cart">
     <div class="l-inner">
+      <h1 class="p-cart__title sec-h2">カート</h1>
+      <p class="p-cart__note">現在、数量変更・クーポンの適用はご利用いただけません。</p>
       <div class="woocommerce">
         <form class="woocommerce-cart-form">
           <table class="shop_table shop_table_responsive cart woocommerce-cart-form__contents" cellspacing="0">
@@ -77,7 +79,7 @@
             <tbody>
               <tr class="woocommerce-cart-form__cart-item cart_item">
                 <td class="product-remove">
-                  <a href="#" class="remove" aria-label="Remove item">&times;</a>
+                  <a href="#" class="remove is-disabled" aria-label="Remove item" aria-disabled="true" tabindex="-1">&times;</a>
                 </td>
                 <td class="product-thumbnail">
                   <a href="/product/bo-autobot.html"><img src="assets/img/item/demo.png" alt="BO-AutoBot"></a>
@@ -88,7 +90,7 @@
                 <td class="product-price" data-title="Price">¥20,000</td>
                 <td class="product-quantity" data-title="Quantity">
                   <div class="quantity">
-                    <input type="number" value="1" min="1">
+                    <input type="number" value="1" min="1" disabled>
                   </div>
                 </td>
                 <td class="product-subtotal" data-title="Subtotal">¥20,000</td>
@@ -97,10 +99,10 @@
                 <td colspan="6" class="actions">
                   <div class="coupon">
                     <label for="coupon_code" class="screen-reader-text">Coupon:</label>
-                    <input type="text" name="coupon_code" class="input-text" id="coupon_code" value="" placeholder="Coupon code">
-                    <button type="button" class="button" name="apply_coupon" value="Apply coupon">Apply coupon</button>
+                    <input type="text" name="coupon_code" class="input-text is-disabled" id="coupon_code" value="" placeholder="Coupon code" disabled>
+                    <button type="button" class="button is-disabled" name="apply_coupon" value="Apply coupon" disabled>Apply coupon</button>
                   </div>
-                  <button type="button" class="button" name="update_cart" value="Update cart">Update cart</button>
+                  <button type="button" class="button is-disabled" name="update_cart" value="Update cart" disabled>Update cart</button>
                 </td>
               </tr>
             </tbody>

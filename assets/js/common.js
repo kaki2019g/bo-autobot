@@ -1,7 +1,11 @@
 // ヘッダーの高さ分だけコンテンツを下げる
 $(function () {
-  const height = $("#js-header").height();
-  $("main").css("margin-top", height);
+  const updateOffset = () => {
+    const height = $("#js-header").outerHeight() || 0;
+    $("main").css("margin-top", height);
+  };
+  updateOffset();
+  $(window).on("resize orientationchange", updateOffset);
 });
 
 $(function () {

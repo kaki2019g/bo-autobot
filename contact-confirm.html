@@ -63,15 +63,18 @@
             <div id="" class="l-container p-contact">
                 <div class="l-inner">
                     <div class="p-contact__top">
-                        <h2 class="p-contact__h2 sec-h2">お問い合わせ確認</h2>
+                        <h1 class="p-contact__h2 sec-h2">お問い合わせ確認</h1>
                     </div>
 
                     <p class="p-contact__lead">以下の内容で送信します。よろしければ「送信する」を押してください。</p>
+                    <p class="p-contact__error" id="contact-error" role="alert"></p>
 
                     <form class="wpcf7-form" action="contact-done.html" method="get" data-gas-endpoint="https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec">
+                      <input type="hidden" name="source" value="contact">
                       <input type="hidden" name="your-name">
                       <input type="hidden" name="your-email">
                       <input type="hidden" name="your-subject">
+                      <input type="hidden" name="your-signal">
                       <input type="hidden" name="your-message">
                       <input type="hidden" name="agree-privacy">
                       <table class="p-contact__confirm">
@@ -86,6 +89,10 @@
                         <tr>
                           <th>お問い合わせ内容</th>
                           <td data-field="your-subject"></td>
+                        </tr>
+                        <tr data-row="your-signal">
+                          <th>サインツール</th>
+                          <td data-field="your-signal"></td>
                         </tr>
                         <tr>
                           <th>お問い合わせ詳細</th>
@@ -105,10 +112,29 @@
 <script>
   (function() {
     var doneUrl = new URL('contact-done.html', window.location.href).toString();
-    var params = new URLSearchParams(window.location.search);
-    var fields = ['your-name', 'your-email', 'your-subject', 'your-message', 'agree-privacy'];
+    var form = document.querySelector('form.wpcf7-form');
+    if (!form) {
+      return;
+    }
+    var error = document.getElementById('contact-error');
+    var raw = null;
+    var data = null;
+    try {
+      raw = sessionStorage.getItem('contactFormData');
+      data = raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      data = null;
+    }
+    var required = ['your-name', 'your-email', 'your-subject', 'your-message', 'agree-privacy'];
+    var isValid = data && required.every(function(key) {
+      return data[key];
+    });
+    var fields = ['your-name', 'your-email', 'your-subject', 'your-signal', 'your-message', 'agree-privacy', 'source'];
     fields.forEach(function(name) {
-      var value = params.get(name) || '';
+      var value = data && data[name] ? data[name] : '';
+      if (name === 'source' && !value) {
+        value = 'contact';
+      }
       var cell = document.querySelector('[data-field="' + name + '"]');
       if (cell) {
         cell.textContent = value;
@@ -121,16 +147,33 @@
     var backButton = document.getElementById('back-button');
     if (backButton) {
       backButton.addEventListener('click', function() {
-        history.back();
+        if (history.length > 1) {
+          history.back();
+        } else {
+          window.location.href = new URL('contact.html', window.location.href).toString();
+        }
       });
     }
-    var form = document.querySelector('form.wpcf7-form');
-    if (!form) {
-      return;
+    var signalRow = document.querySelector('[data-row="your-signal"]');
+    if (signalRow && !(data && data['your-signal'])) {
+      signalRow.style.display = 'none';
+    }
+    var submitButton = form.querySelector('button[type="submit"]');
+    if (!isValid && submitButton) {
+      submitButton.disabled = true;
+    }
+    if (!isValid && error) {
+      error.textContent = '入力内容が見つかりませんでした。お問い合わせフォームからやり直してください。';
     }
     form.setAttribute('action', doneUrl);
     form.addEventListener('submit', function(event) {
       event.preventDefault();
+      if (!isValid) {
+        if (error) {
+          error.textContent = '入力内容が見つかりませんでした。お問い合わせフォームからやり直してください。';
+        }
+        return;
+      }
       if (form.dataset.submitting === 'true') {
         return;
       }
@@ -144,6 +187,19 @@
         button.disabled = true;
       });
       var endpoint = form.getAttribute('data-gas-endpoint');
+      if (!endpoint || endpoint.indexOf('script.google.com') === -1) {
+        if (error) {
+          error.textContent = '送信先の設定が未完了です。お手数ですがお問い合わせください。';
+        }
+        form.dataset.submitting = 'false';
+        if (loading) {
+          loading.style.display = 'none';
+        }
+        buttons.forEach(function(button) {
+          button.disabled = false;
+        });
+        return;
+      }
       var payload = new URLSearchParams(new FormData(form));
       fetch(endpoint, {
         method: 'POST',
@@ -158,6 +214,10 @@
         }
         return response.json();
       }).then(function() {
+        try {
+          sessionStorage.removeItem('contactFormData');
+        } catch (err) {
+        }
         window.location.href = doneUrl;
       }).catch(function() {
         alert('送信に失敗しました。時間をおいて再度お試しください。');

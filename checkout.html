@@ -48,7 +48,7 @@
       document.head.appendChild(baseTag);
     })();
   </script>
-  <title>チェックアウト</title>
+  <title>購入手続き</title>
   <link rel="icon" href="assets/img/common/favicon.ico">
   <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -61,8 +61,12 @@
   <div id="site-header"></div><main id="l-main" class="l-main p-checkout">
   <div class="l-inner">
     <div class="woocommerce">
-      <form name="checkout" class="checkout woocommerce-checkout" action="https://script.google.com/macros/s/AKfycbywM4A3MuEpb27WNq5aN-dzpMuEVLrX1pm1jG1zOtqZjUQt_Q5gjJNS08WscNYgSA/exec" method="post" data-bank-endpoint="https://script.google.com/macros/s/AKfycbw4YWWxECYld21hPHUlAPDJnPFbb1iyhE6aXTnAea7Y9hbiuQ3fNLGfKC9jnNjnOg/exec">
+      <div class="p-checkout__top">
+        <h1 class="sec-h2">購入手続き</h1>
+      </div>
+      <form name="checkout" class="checkout woocommerce-checkout" action="https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec" method="post" data-default-payment="bank_transfer">
         <input type="hidden" name="action" value="create_order">
+        <input type="hidden" name="source" value="checkout">
         <input type="hidden" name="product_id" value="bo-autobot">
         <input type="hidden" name="product_name" value="BO-AutoBot">
         <input type="hidden" name="amount" value="20000">
@@ -120,19 +124,24 @@
           </table>
           <div id="payment" class="woocommerce-checkout-payment">
             <ul class="wc_payment_methods payment_methods methods">
-              <li class="wc_payment_method payment_method_bacs">
-                <input id="payment_method_bacs" type="radio" class="input-radio" name="payment_method" value="bank_transfer" required checked>
+              <li class="wc_payment_method payment_method_bacs is-disabled">
+                <input id="payment_method_bacs" type="radio" class="input-radio" name="payment_method" value="bank_transfer" required disabled aria-disabled="true">
                 <label for="payment_method_bacs">銀行振込</label>
                 <p class="payment_note">振込案内はご注文後にメールでお送りします。</p>
               </li>
               <li class="wc_payment_method payment_method_cod">
-                <input id="payment_method_card" type="radio" class="input-radio" name="payment_method" value="paypal">
+                <input id="payment_method_card" type="radio" class="input-radio" name="payment_method" value="paypal" checked>
                 <label for="payment_method_card">クレジットカード（PayPal）</label>
                 <p class="payment_note">PayPal決済画面へ移動します（カードのみでも利用可）。</p>
               </li>
             </ul>
+            <p class="p-checkout__note">銀行振込はJavaScriptが必要です。</p>
+            <noscript>
+              <p class="p-checkout__noscript">JavaScriptが無効のため銀行振込はご利用いただけません。PayPal決済をご利用ください。</p>
+            </noscript>
             <div class="form-row place-order">
               <button type="submit" class="button alt">注文を確定する</button>
+              <p class="checkout-message" id="checkout-message" aria-live="polite"></p>
             </div>
           </div>
         </div>
@@ -141,25 +150,7 @@
   </div>
 </main><div id="site-footer"></div>
 <script src="assets/js/include.js"></script>
-<script>
-  (function() {
-    var form = document.querySelector('form.checkout');
-    if (!form) {
-      return;
-    }
-    form.addEventListener('submit', function(event) {
-      var methodInput = form.querySelector('input[name="payment_method"]:checked');
-      var method = methodInput ? methodInput.value : '';
-      var confirmUrl = new URL('payment-bank-confirm.html', window.location.href).toString();
-      if (method !== 'bank_transfer') {
-        return;
-      }
-      event.preventDefault();
-      var payload = new URLSearchParams(new FormData(form));
-      window.location.href = confirmUrl + '?' + payload.toString();
-    });
-  })();
-</script>
+<script src="assets/js/checkout.js"></script>
 </body>
 
 </html>

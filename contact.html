@@ -63,10 +63,15 @@
             <div id="" class="l-container p-contact">
                 <div class="l-inner">
                     <div class="p-contact__top">
-                        <h2 class="p-contact__h2 sec-h2">お問い合わせ</h2>
+                    <h1 class="p-contact__h2 sec-h2">お問い合わせ</h1>
                     </div>
 
-                    <form class="wpcf7-form" action="contact-confirm.html" method="get">
+                    <noscript>
+                      <p class="p-contact__noscript">JavaScriptが無効のため確認画面へ進めません。お手数ですがJavaScriptを有効にして再度お試しください。</p>
+                    </noscript>
+
+                    <form class="wpcf7-form" action="contact-confirm.html" method="post">
+  <input type="hidden" name="source" value="contact">
   <table>
     <tr>
       <th>お名前<span>必須</span></th>
@@ -123,7 +128,26 @@
     if (!form) {
       return;
     }
-    form.setAttribute('action', new URL('contact-confirm.html', window.location.href).toString());
+    var confirmUrl = new URL('contact-confirm.html', window.location.href).toString();
+    form.setAttribute('action', confirmUrl);
+    form.addEventListener('submit', function(event) {
+      if (!form.reportValidity()) {
+        return;
+      }
+      event.preventDefault();
+      var data = new FormData(form);
+      var payload = {};
+      data.forEach(function(value, key) {
+        payload[key] = value;
+      });
+      try {
+        sessionStorage.setItem('contactFormData', JSON.stringify(payload));
+      } catch (err) {
+        alert('ブラウザの設定により確認画面へ進めません。JavaScriptの設定をご確認ください。');
+        return;
+      }
+      window.location.href = confirmUrl;
+    });
   })();
 </script>
 </body>
