@@ -29,8 +29,8 @@
     }
   };
 
-  await inject("site-header", withBase("partials/header.html"));
-  await inject("site-footer", withBase("partials/footer.html"));
+  await inject("site-header", withBase("header.html"));
+  await inject("site-footer", withBase("footer.html"));
 
   const updateRootLinks = () => {
     const nodes = document.querySelectorAll('[href^="/"], [src^="/"]');
