@@ -19,9 +19,13 @@ function doPost(e) {
 
     var params = (e && e.parameter) ? e.parameter : {};
     var source = params.source || '';
+    var action = params.action || '';
     logInfo_('route: params', { source: source, keys: Object.keys(params || {}) });
     if (source === 'contact') {
       return handleContact_(params);
+    }
+    if (action === 'capture_paypal') {
+      return handlePaypalCapture_(params);
     }
 
     var payload = normalizeOrderPayload_(e);
@@ -329,6 +333,27 @@ function handlePaypalCreateOrder_(payload) {
   });
 }
 
+// PayPalの承認後にCAPTUREを実行する。
+function handlePaypalCapture_(params) {
+  logInfo_('handlePaypalCapture start', { keys: Object.keys(params || {}) });
+  var config = getOrderConfig_();
+  var paypalOrderId = params.token || params.paypal_order_id || '';
+  if (!paypalOrderId) {
+    return jsonResponse_({ ok: false, error: 'missing_order_id' });
+  }
+  var capture = capturePayPalOrder_(paypalOrderId, config);
+  if (!capture || capture.status !== 'COMPLETED') {
+    logWarn_('handlePaypalCapture incomplete', { paypal_order_id: paypalOrderId, status: capture && capture.status });
+    return jsonResponse_({ ok: false, error: 'capture_incomplete' });
+  }
+  var order = updateOrderStatus_(config, paypalOrderId, 'paid');
+  if (order && order.customer_email && order.previous_status !== 'paid') {
+    sendProductEmail_(config, order.customer_email, order.customer_name);
+  }
+  logInfo_('handlePaypalCapture done', { paypal_order_id: paypalOrderId });
+  return jsonResponse_({ ok: true, status: capture.status });
+}
+
 // PayPal Webhookを検証し、入金確定時にステータス更新と送付メールを行う。
 function handlePaypalWebhook_(e, event) {
   logInfo_('handlePaypalWebhook start', { event_type: event.event_type });
@@ -353,7 +378,7 @@ function handlePaypalWebhook_(e, event) {
   }
 
   var order = updateOrderStatus_(config, paypalOrderId, 'paid');
-  if (order && order.customer_email) {
+  if (order && order.customer_email && order.previous_status !== 'paid') {
     sendProductEmail_(config, order.customer_email, order.customer_name);
   }
   logInfo_('handlePaypalWebhook done', { paypal_order_id: paypalOrderId });
@@ -554,6 +579,28 @@ function createPayPalOrder_(payload, orderId, config) {
   return JSON.parse(response.getContentText());
 }
 
+// 承認済みPayPal注文をCAPTUREする。
+function capturePayPalOrder_(paypalOrderId, config) {
+  logInfo_('capturePayPalOrder start', { paypal_order_id: paypalOrderId });
+  var accessToken = getPayPalAccessToken_(config);
+  var url = getPayPalApiBase_(config) + '/v2/checkout/orders/' + paypalOrderId + '/capture';
+  var response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      Authorization: 'Bearer ' + accessToken
+    },
+    payload: '{}',
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() >= 400) {
+    logWarn_('capturePayPalOrder failed', { status: response.getResponseCode() });
+    throw new Error('paypal_capture_failed');
+  }
+  return JSON.parse(response.getContentText());
+}
+
 // PayPalレスポンスから承認URLを抽出する。
 function extractApprovalUrl_(paypalResponse) {
   if (!paypalResponse || !paypalResponse.links) {
@@ -667,9 +714,11 @@ function updateOrderStatus_(config, paypalOrderId, status) {
 
   for (var i = 1; i < values.length; i++) {
     if (values[i][paypalIndex] === paypalOrderId) {
+      var previousStatus = values[i][statusIndex];
       sheet.getRange(i + 1, statusIndex + 1).setValue(status);
       sheet.getRange(i + 1, updatedIndex + 1).setValue(new Date());
       return {
+        previous_status: previousStatus,
         customer_email: values[i][emailIndex],
         customer_name: values[i][nameIndex]
       };
