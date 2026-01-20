@@ -1,4 +1,5 @@
 (() => {
+  // GitHub Pages配信時にベースパスを調整する。
   const host = window.location.hostname;
   const path = window.location.pathname;
   let base = "/";
@@ -9,6 +10,7 @@
 
   const head = document.head;
   if (head) {
+    // baseタグとgtagスクリプトを挿入する。
     const baseTag = document.createElement("base");
     baseTag.href = base;
     head.insertBefore(baseTag, head.firstChild);
@@ -21,6 +23,7 @@
   }
 
   window.dataLayer = window.dataLayer || [];
+  // gtagを初期化する。
   window.gtag =
     window.gtag ||
     function gtag() {
@@ -29,6 +32,7 @@
   window.gtag("js", new Date());
   window.gtag("config", "G-J2TLPK5HQH");
 
+  // Google Tag Managerを読み込む。
   (function(w, d, s, l, i) {
     w[l] = w[l] || [];
     w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });

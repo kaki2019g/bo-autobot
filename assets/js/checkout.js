@@ -1,4 +1,5 @@
 ﻿(function() {
+  // 支払い方法の選択と確認画面への遷移を制御する。
   var form = document.querySelector(".woocommerce-checkout");
   if (!form) {
     return;
@@ -10,6 +11,7 @@
   var message = document.getElementById("checkout-message");
   var defaultPayment = form.getAttribute("data-default-payment");
 
+  // 画面上のメッセージ表示を切り替える。
   function showMessage(text, isError) {
     if (!message) {
       return;
@@ -33,6 +35,31 @@
     paypalInput.checked = true;
   }
 
+  // フォームの入力をpayload形式にまとめる。
+  function buildPayload() {
+    var data = new FormData(form);
+    var payload = {};
+    data.forEach(function(value, key) {
+      payload[key] = value;
+    });
+    return payload;
+  }
+
+  // セッションストレージへの保存を行う。
+  function saveOrderData(storageKey, payload) {
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(payload));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  // 確認画面へ遷移する。
+  function goToConfirmPage(path) {
+    window.location.href = new URL(path, window.location.href).toString();
+  }
+
   form.addEventListener("submit", function(event) {
     var selected = form.querySelector('input[name="payment_method"]:checked');
     if (!selected) {
@@ -41,31 +68,44 @@
       return;
     }
 
-    if (selected.value !== "bank_transfer") {
-      return;
-    }
-
     if (!form.reportValidity()) {
       event.preventDefault();
       return;
     }
 
-    event.preventDefault();
-    var data = new FormData(form);
-    var payload = {};
-    data.forEach(function(value, key) {
-      payload[key] = value;
-    });
-    payload.payment_method = "bank_transfer";
+    if (selected.value === "bank_transfer") {
+      event.preventDefault();
+      // 銀行振込の確認画面へ遷移する。
+      var payload = buildPayload();
+      payload.payment_method = "bank_transfer";
 
-    try {
-      sessionStorage.setItem("bankOrderData", JSON.stringify(payload));
-    } catch (err) {
-      showMessage("ブラウザの設定により注文内容の確認画面へ進めません。", true);
+      if (!saveOrderData("bankOrderData", payload)) {
+        showMessage("ブラウザの設定により注文内容の確認画面へ進めません。", true);
+        return;
+      }
+
+      showMessage("");
+      goToConfirmPage("payment-bank-confirm.html");
       return;
     }
 
-    showMessage("");
-    window.location.href = new URL("payment-bank-confirm.html", window.location.href).toString();
+    if (selected.value === "paypal") {
+      event.preventDefault();
+      // PayPalの確認画面へ遷移する。
+      var paypalPayload = buildPayload();
+      paypalPayload.payment_method = "paypal";
+      paypalPayload.source = "paypal_confirm";
+      if (!paypalPayload.action) {
+        paypalPayload.action = "create_order";
+      }
+
+      if (!saveOrderData("paypalOrderData", paypalPayload)) {
+        showMessage("ブラウザの設定により注文内容の確認画面へ進めません。", true);
+        return;
+      }
+
+      showMessage("");
+      goToConfirmPage("payment-paypal-confirm.html");
+    }
   });
 })();

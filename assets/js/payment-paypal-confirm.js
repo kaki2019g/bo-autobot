@@ -1,6 +1,5 @@
 (function() {
-  // セッションデータを読み込み、銀行振込注文の送信処理を行う。
-  var doneUrl = new URL('payment-bank-done.html', window.location.href).toString();
+  // セッションデータを読み込み、PayPal注文作成の送信処理を行う。
   var form = document.querySelector('form.wpcf7-form');
   if (!form) {
     return;
@@ -9,7 +8,7 @@
   var raw = null;
   var data = null;
   try {
-    raw = sessionStorage.getItem('bankOrderData');
+    raw = sessionStorage.getItem('paypalOrderData');
     data = raw ? JSON.parse(raw) : null;
   } catch (err) {
     data = null;
@@ -38,10 +37,13 @@
   fields.forEach(function(name) {
     var value = data && data[name] ? data[name] : '';
     if (name === 'payment_method' && !value) {
-      value = 'bank_transfer';
+      value = 'paypal';
     }
     if (name === 'source' && !value) {
-      value = 'bank_confirm';
+      value = 'paypal_confirm';
+    }
+    if (name === 'action' && !value) {
+      value = 'create_order';
     }
     var cell = document.querySelector('[data-field="' + name + '"]');
     if (cell) {
@@ -87,7 +89,6 @@
   if (!isValid && submitButton) {
     submitButton.disabled = true;
   }
-  form.setAttribute('action', doneUrl);
   form.addEventListener('submit', function(event) {
     event.preventDefault();
     if (!isValid) {
@@ -134,18 +135,20 @@
         throw new Error('Request failed');
       }
       return response.json();
-    }).then(function(data) {
-      // 送信成功時はセッションデータを破棄して完了画面へ遷移する。
-      if (!data || !data.ok) {
+    }).then(function(result) {
+      // PayPalの承認URLに遷移する。
+      if (!result || !result.ok || !result.approval_url) {
         throw new Error('Request failed');
       }
       try {
-        sessionStorage.removeItem('bankOrderData');
+        sessionStorage.removeItem('paypalOrderData');
       } catch (err) {
       }
-      window.location.href = doneUrl;
+      window.location.href = result.approval_url;
     }).catch(function() {
-      alert('送信に失敗しました。時間をおいて再度お試しください。');
+      if (error) {
+        error.textContent = 'PayPal決済の準備に失敗しました。時間をおいて再度お試しください。';
+      }
       form.dataset.submitting = 'false';
       if (loading) {
         loading.style.display = 'none';

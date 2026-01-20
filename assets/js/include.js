@@ -1,4 +1,5 @@
 (async () => {
+  // GitHub Pages配信時のベースパスを判定する。
   const getBasePath = () => {
     const hostname = window.location.hostname;
     const pathname = window.location.pathname;
@@ -10,6 +11,7 @@
   };
 
   const basePath = getBasePath();
+  // ルート始まりのパスをベースパスに合わせて補正する。
   const withBase = (path) => {
     if (path.startsWith("/")) {
       return basePath + path.slice(1);
@@ -17,6 +19,7 @@
     return basePath + path;
   };
 
+  // ヘッダー/フッターのHTMLを読み込んで挿入する。
   const inject = async (id, url) => {
     const res = await fetch(url, { cache: "no-cache" });
     if (!res.ok) {
@@ -32,6 +35,7 @@
   await inject("site-header", withBase("header.html"));
   await inject("site-footer", withBase("footer.html"));
 
+  // ルート参照のリンク/画像パスをベースパスへ置き換える。
   const updateRootLinks = () => {
     const nodes = document.querySelectorAll('[href^="/"], [src^="/"]');
     nodes.forEach((node) => {
@@ -46,6 +50,7 @@
 
   updateRootLinks();
 
+  // 共通スクリプトを動的に読み込む。
   const script = document.createElement("script");
   script.src = withBase("assets/js/common.js");
   document.body.appendChild(script);

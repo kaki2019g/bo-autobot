@@ -1,4 +1,5 @@
 (function() {
+  // 送信前に入力内容を保存し、確認画面へ遷移させる。
   var form = document.querySelector('form.wpcf7-form');
   if (!form) {
     return;
@@ -15,6 +16,7 @@
     data.forEach(function(value, key) {
       payload[key] = value;
     });
+    // 確認画面で表示するためセッションストレージへ保存する。
     try {
       sessionStorage.setItem('contactFormData', JSON.stringify(payload));
     } catch (err) {

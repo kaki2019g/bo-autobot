@@ -8,6 +8,7 @@ $(function () {
   $(window).on("resize orientationchange", updateOffset);
 });
 
+// SPメニューの開閉トグル
 $(function () {
   const hum = $("#js-menu-trigger, .close");
   const nav = $(".sp-nav");
@@ -28,6 +29,7 @@ $(function () {
   });
 });
 
+// スクロール位置に応じてフェードインさせる
 $(function () {
   $(window).scroll(function () {
     $(".js-fade").each(function () {
@@ -55,6 +57,7 @@ $(function () {
 //   });
 // });
 $(function () {
+  // セレクトの選択肢に応じて表示エリアを切り替える
   $(".wpcf7-select").on("change", function () {
     //セレクトボックスで選択された値を取得
     const selected = $(".wpcf7-select").val();

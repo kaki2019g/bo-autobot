@@ -7,6 +7,7 @@ const CONTACT_TIMEZONE = 'Asia/Tokyo';
 const CONTACT_REQUIRED_FIELDS = ['your-name', 'your-email', 'your-subject', 'your-message'];
 const LOG_VERBOSE = true;
 
+// POSTリクエストの入口。Webhook/問い合わせ/注文処理へ分岐する。
 function doPost(e) {
   try {
     logInfo_('doPost start', summarizeEvent_(e));
@@ -45,6 +46,7 @@ function doPost(e) {
   }
 }
 
+// 問い合わせの検証・保存・通知を行う。
 function handleContact_(params) {
   logInfo_('handleContact start', summarizeContactParams_(params));
   var missing = CONTACT_REQUIRED_FIELDS.filter(function(key) {
@@ -78,6 +80,7 @@ function handleContact_(params) {
   return jsonResponse_({ ok: true, id: receiptId });
 }
 
+// 問い合わせ記録用シートを取得し、必要なら作成/ヘッダ更新する。
 function getContactSheet_() {
   logInfo_('getContactSheet start', {});
   var ss = SpreadsheetApp.openById(CONTACT_SPREADSHEET_ID);
@@ -109,6 +112,7 @@ function getContactSheet_() {
   return sheet;
 }
 
+// 受付番号を日付＋乱数で生成する。
 function generateReceiptId_(date) {
   var y = Utilities.formatDate(date, CONTACT_TIMEZONE, 'yyyy');
   var m = Utilities.formatDate(date, CONTACT_TIMEZONE, 'MM');
@@ -120,10 +124,12 @@ function generateReceiptId_(date) {
   return y + m + d + '-' + hh + mm + ss + '-' + rand;
 }
 
+// 問い合わせ日時を表示用フォーマットに整形する。
 function formatContactDate_(date) {
   return Utilities.formatDate(date, CONTACT_TIMEZONE, 'yyyy/MM/dd HH:mm:ss');
 }
 
+// 問い合わせ受付の自動返信メールを送信する。
 function sendContactAutoReply_(params, receiptId) {
   var to = params['your-email'] || '';
   if (!to) {
@@ -159,6 +165,7 @@ function sendContactAutoReply_(params, receiptId) {
   });
 }
 
+// 管理者へ問い合わせ通知メールを送信する。
 function notifyContactAdmin_(params, receiptId) {
   if (!CONTACT_ADMIN_EMAIL) {
     logWarn_('notifyContactAdmin skipped: empty admin email', {});
@@ -185,6 +192,7 @@ function notifyContactAdmin_(params, receiptId) {
   });
 }
 
+// 銀行振込注文の登録・通知を行う。
 function handleBankOrder_(payload) {
   logInfo_('handleBankOrder start', summarizeOrderPayload_(payload));
   if (!payload.action || payload.action !== 'create_order') {
@@ -221,12 +229,12 @@ function handleBankOrder_(payload) {
   });
 
   sendBankTransferEmail_(config, payload.customer);
-  sendBankOrderAutoReply_(payload.customer, orderId, payload);
   notifyBankOrderAdmin_(orderId, payload, payload.customer);
   logInfo_('handleBankOrder done', { order_id: orderId });
   return jsonResponse_({ ok: true, order_id: orderId });
 }
 
+// 銀行振込注文の自動返信メールを送信する。
 function sendBankOrderAutoReply_(customer, orderId, payload) {
   if (!customer || !customer.email) {
     logWarn_('sendBankOrderAutoReply skipped: missing email', {});
@@ -252,6 +260,7 @@ function sendBankOrderAutoReply_(customer, orderId, payload) {
   logInfo_('sendBankOrderAutoReply', { email: maskEmail_(customer.email), order_id: orderId });
 }
 
+// 銀行振込注文の管理者通知メールを送信する。
 function notifyBankOrderAdmin_(orderId, payload, customer) {
   if (!CONTACT_ADMIN_EMAIL) {
     logWarn_('notifyBankOrderAdmin skipped: empty admin email', {});
@@ -274,6 +283,7 @@ function notifyBankOrderAdmin_(orderId, payload, customer) {
   logInfo_('notifyBankOrderAdmin', { to: maskEmail_(CONTACT_ADMIN_EMAIL), order_id: orderId });
 }
 
+// PayPal注文作成を行い、承認URLを返す。
 function handlePaypalCreateOrder_(payload) {
   logInfo_('handlePaypalCreateOrder start', summarizeOrderPayload_(payload));
   var config = getOrderConfig_();
@@ -281,7 +291,7 @@ function handlePaypalCreateOrder_(payload) {
 
   if (payload.payment_method !== 'paypal') {
     logWarn_('handlePaypalCreateOrder invalid payment method', { payment_method: payload.payment_method });
-    return htmlResponse_('このエンドポイントはPayPal決済専用です。');
+    return jsonResponse_({ ok: false, error: 'invalid_payment_method' });
   }
 
   var orderId = Utilities.getUuid();
@@ -309,11 +319,17 @@ function handlePaypalCreateOrder_(payload) {
 
   if (!approvalUrl) {
     logWarn_('handlePaypalCreateOrder missing approval url', { order_id: orderId });
-    return htmlResponse_('PayPalの決済URLを取得できませんでした。');
+    return jsonResponse_({ ok: false, error: 'missing_approval_url' });
   }
-  return redirectResponse_(approvalUrl);
+  return jsonResponse_({
+    ok: true,
+    approval_url: approvalUrl,
+    order_id: orderId,
+    paypal_order_id: paypalOrderId
+  });
 }
 
+// PayPal Webhookを検証し、入金確定時にステータス更新と送付メールを行う。
 function handlePaypalWebhook_(e, event) {
   logInfo_('handlePaypalWebhook start', { event_type: event.event_type });
   var config = getOrderConfig_();
@@ -344,6 +360,7 @@ function handlePaypalWebhook_(e, event) {
   return jsonResponse_({ status: 'ok' });
 }
 
+// Webhookのリクエスト本文からイベントJSONを抽出する。
 function extractWebhookEvent_(e) {
   if (!e || !e.postData || !e.postData.contents) {
     return null;
@@ -359,6 +376,7 @@ function extractWebhookEvent_(e) {
   return null;
 }
 
+// パラメータ/JSON入力を注文ペイロードに正規化する。
 function normalizeOrderPayload_(e) {
   var params = (e && e.parameter) ? e.parameter : {};
   if (params && params.action) {
@@ -393,6 +411,7 @@ function normalizeOrderPayload_(e) {
   return body || {};
 }
 
+// 注文ペイロードの必須項目を検証する。
 function validateOrderPayload_(payload) {
   if (!payload || !payload.customer) {
     logWarn_('validateOrderPayload invalid payload', {});
@@ -404,6 +423,7 @@ function validateOrderPayload_(payload) {
   }
 }
 
+// スクリプトプロパティから注文関連の設定値を取得する。
 function getOrderConfig_() {
   var props = PropertiesService.getScriptProperties();
   return {
@@ -424,6 +444,7 @@ function getOrderConfig_() {
   };
 }
 
+// 注文情報をシートへ追記する。
 function appendOrder_(config, data) {
   logInfo_('appendOrder', { order_id: data.order_id, payment_method: data.payment_method });
   var sheet = getOrderSheet_(config);
@@ -464,11 +485,13 @@ function appendOrder_(config, data) {
   ]);
 }
 
+// 注文記録用シートを取得する。
 function getOrderSheet_(config) {
   var ss = SpreadsheetApp.openById(config.SHEET_ID);
   return ss.getSheetByName(config.SHEET_NAME);
 }
 
+// 銀行振込の案内メールを送信する。
 function sendBankTransferEmail_(config, customer) {
   logInfo_('sendBankTransferEmail', { email: maskEmail_(customer.email) });
   var subject = '【BO-AutoBot】銀行振込のご案内';
@@ -487,6 +510,7 @@ function sendBankTransferEmail_(config, customer) {
   GmailApp.sendEmail(customer.email, subject, body);
 }
 
+// PayPalの注文作成APIを呼び出す。
 function createPayPalOrder_(payload, orderId, config) {
   logInfo_('createPayPalOrder start', { order_id: orderId });
   var accessToken = getPayPalAccessToken_(config);
@@ -530,6 +554,7 @@ function createPayPalOrder_(payload, orderId, config) {
   return JSON.parse(response.getContentText());
 }
 
+// PayPalレスポンスから承認URLを抽出する。
 function extractApprovalUrl_(paypalResponse) {
   if (!paypalResponse || !paypalResponse.links) {
     return '';
@@ -542,6 +567,7 @@ function extractApprovalUrl_(paypalResponse) {
   return '';
 }
 
+// PayPal Webhook署名の検証を行う。
 function verifyWebhook_(e, event, config) {
   logInfo_('verifyWebhook start', {});
   var headers = (e && e.headers) ? e.headers : null;
@@ -584,6 +610,7 @@ function verifyWebhook_(e, event, config) {
   return result.verification_status === 'SUCCESS';
 }
 
+// PayPal APIのアクセストークンを取得する。
 function getPayPalAccessToken_(config) {
   logInfo_('getPayPalAccessToken start', {});
   var url = getPayPalApiBase_(config) + '/v1/oauth2/token';
@@ -605,12 +632,14 @@ function getPayPalAccessToken_(config) {
   return JSON.parse(response.getContentText()).access_token;
 }
 
+// PayPal環境に応じたAPIベースURLを返す。
 function getPayPalApiBase_(config) {
   return config.PAYPAL_ENV === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 }
 
+// WebhookイベントからPayPal注文IDを抽出する。
 function extractOrderIdFromEvent_(event) {
   if (event.resource && event.resource.supplementary_data &&
       event.resource.supplementary_data.related_ids &&
@@ -620,6 +649,7 @@ function extractOrderIdFromEvent_(event) {
   return '';
 }
 
+// 注文ステータスを更新し、購入者情報を返す。
 function updateOrderStatus_(config, paypalOrderId, status) {
   logInfo_('updateOrderStatus start', { paypal_order_id: paypalOrderId, status: status });
   var sheet = getOrderSheet_(config);
@@ -649,6 +679,7 @@ function updateOrderStatus_(config, paypalOrderId, status) {
   return null;
 }
 
+// 商品ダウンロード案内メールを送信する。
 function sendProductEmail_(config, email, name) {
   logInfo_('sendProductEmail', { email: maskEmail_(email) });
   var subject = '【BO-AutoBot】商品送付のご案内';
@@ -660,6 +691,7 @@ function sendProductEmail_(config, email, name) {
   GmailApp.sendEmail(email, subject, body);
 }
 
+// 即時リダイレクトするHTMLレスポンスを返す。
 function redirectResponse_(url) {
   if (!url) {
     return htmlResponse_('遷移先URLが設定されていません。');
@@ -671,10 +703,12 @@ function redirectResponse_(url) {
   return HtmlService.createHtmlOutput(html);
 }
 
+// 単純なHTMLレスポンスを返す。
 function htmlResponse_(message) {
   return HtmlService.createHtmlOutput('<!doctype html><html><body>' + message + '</body></html>');
 }
 
+// ヘッダ名を大小無視で取得する。
 function getHeader_(headers, name) {
   var lowerName = name.toLowerCase();
   for (var key in headers) {
@@ -685,12 +719,14 @@ function getHeader_(headers, name) {
   return '';
 }
 
+// JSONレスポンスを返す。
 function jsonResponse_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// 情報ログを出力する（詳細ログON時のみ）。
 function logInfo_(message, data) {
   if (!LOG_VERBOSE) {
     return;
@@ -698,14 +734,17 @@ function logInfo_(message, data) {
   Logger.log('[INFO] %s %s', message, JSON.stringify(data || {}));
 }
 
+// 警告ログを出力する。
 function logWarn_(message, data) {
   Logger.log('[WARN] %s %s', message, JSON.stringify(data || {}));
 }
 
+// エラーログを出力する。
 function logError_(message, err) {
   Logger.log('[ERROR] %s %s', message, String(err));
 }
 
+// イベントの概要情報をログ用に要約する。
 function summarizeEvent_(e) {
   if (!e) {
     return { hasEvent: false };
@@ -717,6 +756,7 @@ function summarizeEvent_(e) {
   };
 }
 
+// 問い合わせパラメータをマスクして要約する。
 function summarizeContactParams_(params) {
   return {
     name: maskName_(params['your-name']),
@@ -727,6 +767,7 @@ function summarizeContactParams_(params) {
   };
 }
 
+// 注文ペイロードをマスクして要約する。
 function summarizeOrderPayload_(payload) {
   if (!payload) {
     return { hasPayload: false };
@@ -741,6 +782,7 @@ function summarizeOrderPayload_(payload) {
   };
 }
 
+// メールアドレスをマスクする。
 function maskEmail_(email) {
   if (!email) {
     return '';
@@ -755,6 +797,7 @@ function maskEmail_(email) {
   return masked + '@' + domain;
 }
 
+// 氏名をマスクする。
 function maskName_(name) {
   if (!name) {
     return '';

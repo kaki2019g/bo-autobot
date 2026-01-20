@@ -1,4 +1,5 @@
 (function() {
+  // セッションデータを読み込み、確認画面を構築して送信処理を行う。
   var doneUrl = new URL('contact-done.html', window.location.href).toString();
   var form = document.querySelector('form.wpcf7-form');
   if (!form) {
@@ -13,6 +14,7 @@
   } catch (err) {
     data = null;
   }
+  // 必須項目の存在を確認する。
   var required = ['your-name', 'your-email', 'your-subject', 'your-message', 'agree-privacy'];
   var isValid = data && required.every(function(key) {
     return data[key];
@@ -32,6 +34,7 @@
       input.value = value;
     }
   });
+  // 戻るボタンの挙動を整える。
   var backButton = document.getElementById('back-button');
   if (backButton) {
     backButton.addEventListener('click', function() {
@@ -46,6 +49,7 @@
   if (signalRow && !(data && data['your-signal'])) {
     signalRow.style.display = 'none';
   }
+  // 不足がある場合は送信を無効化する。
   var submitButton = form.querySelector('button[type="submit"]');
   if (!isValid && submitButton) {
     submitButton.disabled = true;
@@ -66,6 +70,7 @@
       return;
     }
     form.dataset.submitting = 'true';
+    // 送信中表示に切り替える。
     var loading = document.getElementById('contact-loading');
     if (loading) {
       loading.style.display = 'block';
@@ -75,6 +80,7 @@
       button.disabled = true;
     });
     var endpoint = form.getAttribute('data-gas-endpoint');
+    // GASのエンドポイントを検証する。
     if (!endpoint || endpoint.indexOf('script.google.com') === -1) {
       if (error) {
         error.textContent = '送信先の設定が未完了です。お手数ですがお問い合わせください。';
@@ -102,6 +108,7 @@
       }
       return response.json();
     }).then(function() {
+      // 送信成功時はセッションデータを破棄して完了画面へ遷移する。
       try {
         sessionStorage.removeItem('contactFormData');
       } catch (err) {
