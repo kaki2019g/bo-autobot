@@ -892,13 +892,13 @@ button {
 
 .mainv {
   position: relative;
-  padding: 43% 0 0 0;
+  padding: 38% 0 0 0;
   background: url(../img/home/mainv.jpg) no-repeat center top;
   background-size: cover;
 }
 @media screen and (min-width: 1500px) {
   .mainv {
-    padding: 600px 0 0 0;
+    padding: 520px 0 0 0;
   }
 }
 .mainv__catch {
@@ -926,7 +926,7 @@ button {
   }
 }
 .mainv__image {
-  width: 38%;
+  width: 32%;
 }
 .mainv__title {
   font-size: clamp(26px, 2.4vw, 36px);
@@ -1118,11 +1118,14 @@ button {
 }
 .p-home-cta__text--price {
   font-weight: 700;
-  margin: 20px 0 30px;
+  margin: 5px 0 5px;
 }
 @media screen and (max-width: 768px) {
+  .p-home-cta__text--title {
+    margin: 10px 0 5px;
+  }
   .p-home-cta__text--price {
-    margin: 10px 0 15px;
+    margin: 0 0;
   }
 }
 @media screen and (max-width: 768px) {
