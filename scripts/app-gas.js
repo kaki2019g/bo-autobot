@@ -349,6 +349,7 @@ function handlePaypalCapture_(params) {
   var order = updateOrderStatus_(config, paypalOrderId, 'paid');
   if (order && order.customer_email && order.previous_status !== 'paid') {
     sendProductEmail_(config, order.customer_email, order.customer_name);
+    notifyPaypalOrderAdmin_(paypalOrderId, order);
   }
   logInfo_('handlePaypalCapture done', { paypal_order_id: paypalOrderId });
   return jsonResponse_({ ok: true, status: capture.status });
@@ -380,6 +381,7 @@ function handlePaypalWebhook_(e, event) {
   var order = updateOrderStatus_(config, paypalOrderId, 'paid');
   if (order && order.customer_email && order.previous_status !== 'paid') {
     sendProductEmail_(config, order.customer_email, order.customer_name);
+    notifyPaypalOrderAdmin_(paypalOrderId, order);
   }
   logInfo_('handlePaypalWebhook done', { paypal_order_id: paypalOrderId });
   return jsonResponse_({ status: 'ok' });
@@ -711,6 +713,9 @@ function updateOrderStatus_(config, paypalOrderId, status) {
   var updatedIndex = header.indexOf('updated_at');
   var emailIndex = header.indexOf('customer_email');
   var nameIndex = header.indexOf('customer_name');
+  var productIndex = header.indexOf('product_name');
+  var amountIndex = header.indexOf('amount');
+  var currencyIndex = header.indexOf('currency');
 
   for (var i = 1; i < values.length; i++) {
     if (values[i][paypalIndex] === paypalOrderId) {
@@ -720,7 +725,10 @@ function updateOrderStatus_(config, paypalOrderId, status) {
       return {
         previous_status: previousStatus,
         customer_email: values[i][emailIndex],
-        customer_name: values[i][nameIndex]
+        customer_name: values[i][nameIndex],
+        product_name: productIndex !== -1 ? values[i][productIndex] : '',
+        amount: amountIndex !== -1 ? values[i][amountIndex] : '',
+        currency: currencyIndex !== -1 ? values[i][currencyIndex] : ''
       };
     }
   }
@@ -738,6 +746,66 @@ function sendProductEmail_(config, email, name) {
     'ダウンロードURL：\n' + config.PRODUCT_DOWNLOAD_URL + '\n\n' +
     'ご不明点がございましたらお問い合わせください。';
   GmailApp.sendEmail(email, subject, body);
+}
+
+// PayPal決済完了時に管理者へ通知メールを送信する。
+function notifyPaypalOrderAdmin_(paypalOrderId, order) {
+  if (!CONTACT_ADMIN_EMAIL) {
+    logWarn_('notifyPaypalOrderAdmin skipped: empty admin email', {});
+    return;
+  }
+  var subject = '【PayPal】決済完了: ' + paypalOrderId;
+  var body = [
+    'PayPal決済が完了しました。',
+    'PayPal注文ID: ' + paypalOrderId,
+    '購入者名: ' + (order.customer_name || ''),
+    '購入者メール: ' + (order.customer_email || ''),
+    '商品名: ' + (order.product_name || ''),
+    '金額: ' + (order.amount || '') + ' ' + (order.currency || '')
+  ].join('\n');
+
+  GmailApp.sendEmail(CONTACT_ADMIN_EMAIL, subject, body);
+  logInfo_('notifyPaypalOrderAdmin', { to: maskEmail_(CONTACT_ADMIN_EMAIL), paypal_order_id: paypalOrderId });
+}
+
+// 銀行振込の入金確認後に手動で実行し、ダウンロード案内を送信する。
+function sendBankTransferDownloadEmail() {
+  var config = getOrderConfig_();
+  var sheet = getOrderSheet_(config);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return;
+  }
+
+  var header = values[0];
+  var statusIndex = header.indexOf('status');
+  var methodIndex = header.indexOf('payment_method');
+  var emailIndex = header.indexOf('customer_email');
+  var nameIndex = header.indexOf('customer_name');
+  var sentIndex = header.indexOf('download_sent_at');
+
+  if (sentIndex === -1) {
+    sheet.getRange(1, header.length + 1).setValue('download_sent_at');
+    sentIndex = header.length;
+  }
+
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var status = row[statusIndex];
+    var method = row[methodIndex];
+    var email = row[emailIndex];
+    var name = row[nameIndex];
+    var sentAt = row[sentIndex];
+
+    if (status !== 'paid' || method !== 'bank_transfer') {
+      continue;
+    }
+    if (!email || sentAt) {
+      continue;
+    }
+    sendProductEmail_(config, email, name || '');
+    sheet.getRange(i + 1, sentIndex + 1).setValue(new Date());
+  }
 }
 
 // 即時リダイレクトするHTMLレスポンスを返す。
