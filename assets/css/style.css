@@ -995,6 +995,12 @@ button {
   .p-home-about__item--img {
     margin: 0 0 15px;
   }
+  .p-home-about__item--img img {
+    width: min(300px, 100%);
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
 }
 .p-home-about__item--text {
   text-align: left;
