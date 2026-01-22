@@ -75,7 +75,7 @@ function handleContact_(params) {
     '未対応',
     '',
     formatContactDate_(now),
-    params['your-signal'] || ''
+    params['signal-file-name'] || ''
   ]);
 
   sendContactAutoReply_(params, receiptId);
@@ -154,7 +154,7 @@ function sendContactAutoReply_(params, receiptId) {
     'お名前: ' + (params['your-name'] || ''),
     'メール: ' + (params['your-email'] || ''),
     'お問い合わせ内容: ' + (params['your-subject'] || ''),
-    params['your-signal'] ? ('サインツール: ' + params['your-signal']) : '',
+    params['signal-file-name'] ? ('サインツール: ' + params['signal-file-name']) : '',
     'お問い合わせ詳細:',
     (params['your-message'] || ''),
     '----------------',
@@ -184,16 +184,41 @@ function notifyContactAdmin_(params, receiptId) {
     'お名前: ' + (params['your-name'] || ''),
     'メール: ' + (params['your-email'] || ''),
     'お問い合わせ内容: ' + (params['your-subject'] || ''),
-    params['your-signal'] ? ('サインツール: ' + params['your-signal']) : '',
+    params['signal-file-name'] ? ('サインツール: ' + params['signal-file-name']) : '',
     'お問い合わせ詳細:',
     (params['your-message'] || '')
   ].join('\n');
 
-  MailApp.sendEmail({
+  var options = {
     to: CONTACT_ADMIN_EMAIL,
     subject: subject,
     body: body
-  });
+  };
+  // サインツール添付がある場合のみ管理者メールに添付する。
+  if (params['signal-file-data'] && params['signal-file-name']) {
+    var blob = buildAttachmentBlob_(params['signal-file-data'], params['signal-file-name']);
+    if (blob) {
+      options.attachments = [blob];
+    }
+  }
+  MailApp.sendEmail(options);
+}
+
+// Base64データURLから添付Blobを作成する。
+function buildAttachmentBlob_(dataUrl, filename) {
+  try {
+    var parts = String(dataUrl || '').split(',');
+    if (parts.length < 2) {
+      return null;
+    }
+    var contentType = parts[0].match(/data:(.*);base64/);
+    var mime = contentType && contentType[1] ? contentType[1] : 'application/zip';
+    var bytes = Utilities.base64Decode(parts[1]);
+    return Utilities.newBlob(bytes, mime, filename);
+  } catch (err) {
+    logWarn_('buildAttachmentBlob failed', { error: String(err) });
+    return null;
+  }
 }
 
 // 銀行振込注文の登録・通知を行う。
@@ -467,7 +492,8 @@ function getOrderConfig_() {
     PAYPAL_ENV: props.getProperty('PAYPAL_ENV') || 'sandbox',
     PAYPAL_RETURN_URL: props.getProperty('PAYPAL_RETURN_URL'),
     PAYPAL_CANCEL_URL: props.getProperty('PAYPAL_CANCEL_URL'),
-    PRODUCT_DOWNLOAD_URL: props.getProperty('PRODUCT_DOWNLOAD_URL') || 'https://example.com/download'
+    PRODUCT_DOWNLOAD_URL: props.getProperty('PRODUCT_DOWNLOAD_URL') || 'https://example.com/download',
+    PRODUCT_DOWNLOAD_FILE_ID: props.getProperty('PRODUCT_DOWNLOAD_FILE_ID')
   };
 }
 
@@ -748,6 +774,27 @@ function sendProductEmail_(config, email, name) {
   GmailApp.sendEmail(email, subject, body);
 }
 
+// 指定ファイルに閲覧権限を付与する。
+function grantProductDownloadViewer_(config, email) {
+  // 設定されたファイルに対して閲覧権限のみを付与する。
+  if (!config.PRODUCT_DOWNLOAD_FILE_ID) {
+    logWarn_('grantProductDownloadViewer skipped: empty file id', {});
+    return false;
+  }
+  try {
+    var file = DriveApp.getFileById(config.PRODUCT_DOWNLOAD_FILE_ID);
+    file.addViewer(email);
+    logInfo_('grantProductDownloadViewer ok', {
+      email: maskEmail_(email),
+      file_id: config.PRODUCT_DOWNLOAD_FILE_ID
+    });
+    return true;
+  } catch (err) {
+    logError_('grantProductDownloadViewer failed', err);
+    return false;
+  }
+}
+
 // PayPal決済完了時に管理者へ通知メールを送信する。
 function notifyPaypalOrderAdmin_(paypalOrderId, order) {
   if (!CONTACT_ADMIN_EMAIL) {
@@ -770,6 +817,7 @@ function notifyPaypalOrderAdmin_(paypalOrderId, order) {
 
 // 銀行振込の入金確認後に手動で実行し、ダウンロード案内を送信する。
 function sendBankTransferDownloadEmail() {
+  // 対象注文に閲覧権限を付与してから案内メールを送信する。
   var config = getOrderConfig_();
   var sheet = getOrderSheet_(config);
   var values = sheet.getDataRange().getValues();
@@ -801,6 +849,9 @@ function sendBankTransferDownloadEmail() {
       continue;
     }
     if (!email || sentAt) {
+      continue;
+    }
+    if (!grantProductDownloadViewer_(config, email)) {
       continue;
     }
     sendProductEmail_(config, email, name || '');

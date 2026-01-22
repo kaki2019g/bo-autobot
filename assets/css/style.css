@@ -527,30 +527,21 @@ button {
   }
 }
 .l-header__nav a {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  color: #fff;
+  color: #252928;
   line-height: 1;
+  font-weight: 600;
 }
 .l-header__nav a img {
   width: 100%;
   height: 100%;
 }
 .l-header__nav--contact a {
-  border-radius: 15px;
-  background: #FF48A0;
-  padding: 10px;
-  max-width: 200px;
-  font-size: clamp(16px, 1.6vw, 24px);
-  font-weight: bold;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  padding: 15px 20px;
 }
 .l-header__nav--contact a:hover {
-  background: #fff;
-  color: #FF48A0;
+  color: #18AA86;
 }
 @media screen and (max-width: 768px) {
   .l-header__nav--contact a {
@@ -1728,6 +1719,11 @@ button {
 .p-contact td {
   padding: 15px 0;
 }
+.p-contact__note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #555;
+}
 .p-contact .slide .display {
   display: none;
 }
@@ -2209,6 +2205,37 @@ button {
   grid-template-columns: 1fr 1fr 1fr;
   gap: 5% 60px;
 }
+.p-news__list--updates {
+  display: block;
+}
+.p-news .p-contact__top {
+  margin-bottom: 24px;
+}
+.p-news__list--updates .p-news__item {
+  display: flex;
+  gap: 0 30px;
+  border-bottom: solid 1px #ddd;
+  padding: 18px 0;
+}
+@media screen and (max-width: 768px) {
+  .p-news__list--updates .p-news__item {
+    flex-direction: column;
+    gap: 8px 0;
+  }
+}
+.p-news__list--updates .p-news__left {
+  width: 180px;
+  font-weight: 700;
+}
+@media screen and (max-width: 768px) {
+  .p-news__list--updates .p-news__left {
+    width: 100%;
+  }
+}
+.p-news__list--updates .p-news__text {
+  margin: 0;
+  line-height: 1.7;
+}
 @media screen and (max-width: 768px) {
   .p-news__list {
     grid-template-columns: 1fr 1fr;
@@ -2424,6 +2451,21 @@ button {
 .p-item-top__text--detail {
   margin: 40px 0 20px;
 }
+.p-item-top__text--detail p {
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.p-item-top__text--detail ul {
+  margin: 0 0 20px 18px;
+}
+.p-item-top__text--detail li {
+  margin: 0 0 6px;
+  list-style: disc;
+}
+.p-item-top__text--detail .p-item-top__text--note {
+  margin: 10px 0 0;
+  font-weight: 400;
+}
 @media screen and (max-width: 768px) {
   .p-item-top__text--detail {
     margin: 20px 0 20px;
@@ -2433,6 +2475,15 @@ button {
   font-weight: bold;
   font-size: 20px;
   margin: 0 0 20px;
+}
+.p-item-top__text--price-label {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.p-item-top__text--price-note {
+  margin: -10px 0 20px;
+  font-size: 13px;
+  color: #555;
 }
 .p-item-top__text--price .tax {
   font-size: 14px;

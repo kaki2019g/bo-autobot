@@ -19,7 +19,7 @@
   var isValid = data && required.every(function(key) {
     return data[key];
   });
-  var fields = ['your-name', 'your-email', 'your-subject', 'your-signal', 'your-message', 'agree-privacy', 'source'];
+  var fields = ['your-name', 'your-email', 'your-subject', 'signal-file-name', 'signal-file-data', 'your-message', 'agree-privacy', 'source'];
   fields.forEach(function(name) {
     var value = data && data[name] ? data[name] : '';
     if (name === 'source' && !value) {
@@ -45,8 +45,8 @@
       }
     });
   }
-  var signalRow = document.querySelector('[data-row="your-signal"]');
-  if (signalRow && !(data && data['your-signal'])) {
+  var signalRow = document.querySelector('[data-row="signal-file-name"]');
+  if (signalRow && !(data && data['signal-file-name'])) {
     signalRow.style.display = 'none';
   }
   // 不足がある場合は送信を無効化する。
