@@ -15,11 +15,11 @@
     data = null;
   }
   // 必須項目の存在を確認する。
-  var required = ['your-name', 'your-email', 'your-subject', 'your-message', 'agree-privacy'];
+  var required = ['your-name', 'your-email', 'your-subject', 'your-message'];
   var isValid = data && required.every(function(key) {
     return data[key];
   });
-  var fields = ['your-name', 'your-email', 'your-subject', 'signal-file-name', 'signal-file-data', 'your-message', 'agree-privacy', 'source'];
+  var fields = ['your-name', 'your-email', 'your-subject', 'signal-file-name', 'signal-file-data', 'your-message', 'source'];
   fields.forEach(function(name) {
     var value = data && data[name] ? data[name] : '';
     if (name === 'source' && !value) {

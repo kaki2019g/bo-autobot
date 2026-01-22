@@ -1724,6 +1724,14 @@ button {
   font-size: 13px;
   color: #555;
 }
+.p-contact__agree-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+.p-contact__agree-note a {
+  text-decoration: underline;
+}
 .p-contact .slide .display {
   display: none;
 }
@@ -1752,11 +1760,11 @@ button {
 }
 .p-contact .submit {
   text-align: center;
-  margin: 60px 0 100px;
+  margin: 5px 0 100px;
 }
 @media screen and (max-width: 768px) {
   .p-contact .submit {
-    margin: 60px 0 50px;
+    margin: 5px 0 50px;
   }
 }
 .p-contact .submit .wpcf7-submit {
@@ -3466,6 +3474,14 @@ button {
   margin: 12px 0 0;
   font-size: 14px;
   color: #333;
+}
+.p-checkout__agree-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+.p-checkout__agree-note a {
+  text-decoration: underline;
 }
 .p-checkout .checkout-message.is-error {
   color: #c0392b;

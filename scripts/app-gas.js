@@ -373,7 +373,7 @@ function handlePaypalCapture_(params) {
   }
   var order = updateOrderStatus_(config, paypalOrderId, 'paid');
   if (order && order.customer_email && order.previous_status !== 'paid') {
-    sendProductEmail_(config, order.customer_email, order.customer_name);
+    sendPaypalHoldEmail_(order.customer_email, order.customer_name);
     notifyPaypalOrderAdmin_(paypalOrderId, order);
   }
   logInfo_('handlePaypalCapture done', { paypal_order_id: paypalOrderId });
@@ -405,7 +405,7 @@ function handlePaypalWebhook_(e, event) {
 
   var order = updateOrderStatus_(config, paypalOrderId, 'paid');
   if (order && order.customer_email && order.previous_status !== 'paid') {
-    sendProductEmail_(config, order.customer_email, order.customer_name);
+    sendPaypalHoldEmail_(order.customer_email, order.customer_name);
     notifyPaypalOrderAdmin_(paypalOrderId, order);
   }
   logInfo_('handlePaypalWebhook done', { paypal_order_id: paypalOrderId });
@@ -774,6 +774,22 @@ function sendProductEmail_(config, email, name) {
   GmailApp.sendEmail(email, subject, body);
 }
 
+// PayPal決済完了時に手動送付の案内メールを送信する。
+function sendPaypalHoldEmail_(email, name) {
+  if (!email) {
+    return;
+  }
+  logInfo_('sendPaypalHoldEmail', { email: maskEmail_(email) });
+  var subject = '【BO-AutoBot】ご注文完了のご連絡';
+  var body = (name || '') + ' 様\n\n' +
+    'ご注文ありがとうございます。\n' +
+    '決済が正常に行われているか確認でき次第、ダウンロードリンクをお送りします。\n' +
+    '手動での確認になりますので、送付まで少々お時間をいただく場合があります。\n' +
+    '2日以上経ってもメールが届かない場合はお問い合わせください。\n\n' +
+    'ご不明点がございましたらお問い合わせください。';
+  GmailApp.sendEmail(email, subject, body);
+}
+
 // 指定ファイルに閲覧権限を付与する。
 function grantProductDownloadViewer_(config, email) {
   // 設定されたファイルに対して閲覧権限のみを付与する。
@@ -815,7 +831,7 @@ function notifyPaypalOrderAdmin_(paypalOrderId, order) {
   logInfo_('notifyPaypalOrderAdmin', { to: maskEmail_(CONTACT_ADMIN_EMAIL), paypal_order_id: paypalOrderId });
 }
 
-// 銀行振込の入金確認後に手動で実行し、ダウンロード案内を送信する。
+// 入金済みかつ未送付の注文に対して、ダウンロード案内を送信する。
 function sendBankTransferDownloadEmail() {
   // 対象注文に閲覧権限を付与してから案内メールを送信する。
   var config = getOrderConfig_();
@@ -827,7 +843,6 @@ function sendBankTransferDownloadEmail() {
 
   var header = values[0];
   var statusIndex = header.indexOf('status');
-  var methodIndex = header.indexOf('payment_method');
   var emailIndex = header.indexOf('customer_email');
   var nameIndex = header.indexOf('customer_name');
   var sentIndex = header.indexOf('download_sent_at');
@@ -840,12 +855,11 @@ function sendBankTransferDownloadEmail() {
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var status = row[statusIndex];
-    var method = row[methodIndex];
     var email = row[emailIndex];
     var name = row[nameIndex];
     var sentAt = row[sentIndex];
 
-    if (status !== 'paid' || method !== 'bank_transfer') {
+    if (status !== 'paid') {
       continue;
     }
     if (!email || sentAt) {
