@@ -5,6 +5,51 @@
     return;
   }
 
+  // URLパラメータに応じて商品情報を切り替える。
+  var productCatalog = {
+    default: {
+      id: "bo-autobot",
+      name: "BO-AutoBot",
+      amount: 20000,
+      title: "購入手続き"
+    },
+    demo: {
+      id: "bo-autobot-demo",
+      name: "BO-AutoBot デモ版",
+      amount: 10000,
+      title: "購入手続き（デモ版）"
+    }
+  };
+  var params = new URLSearchParams(window.location.search);
+  var productKey = params.get("product");
+  var product = productCatalog[productKey] || productCatalog.default;
+  var titleEl = document.getElementById("checkout-title");
+  if (titleEl) {
+    titleEl.textContent = product.title;
+  }
+  document.title = product.title;
+  var idInput = form.querySelector('input[name="product_id"]');
+  var nameInput = form.querySelector('input[name="product_name"]');
+  var amountInput = form.querySelector('input[name="amount"]');
+  if (idInput) {
+    idInput.value = product.id;
+  }
+  if (nameInput) {
+    nameInput.value = product.name;
+  }
+  if (amountInput) {
+    amountInput.value = String(product.amount);
+  }
+  var nameNodes = document.querySelectorAll("[data-checkout-product-name]");
+  nameNodes.forEach(function(node) {
+    node.textContent = product.name;
+  });
+  var amountText = "¥" + Number(product.amount).toLocaleString("ja-JP");
+  var amountNodes = document.querySelectorAll("[data-checkout-amount]");
+  amountNodes.forEach(function(node) {
+    node.textContent = amountText;
+  });
+
   var bankItem = form.querySelector(".payment_method_bacs");
   var bankInput = form.querySelector("#payment_method_bacs");
   var paypalInput = form.querySelector("#payment_method_card");

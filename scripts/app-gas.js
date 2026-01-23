@@ -496,7 +496,9 @@ function getOrderConfig_() {
     PAYPAL_RETURN_URL: props.getProperty('PAYPAL_RETURN_URL'),
     PAYPAL_CANCEL_URL: props.getProperty('PAYPAL_CANCEL_URL'),
     PRODUCT_DOWNLOAD_URL: props.getProperty('PRODUCT_DOWNLOAD_URL') || 'https://example.com/download',
-    PRODUCT_DOWNLOAD_FILE_ID: props.getProperty('PRODUCT_DOWNLOAD_FILE_ID')
+    PRODUCT_DOWNLOAD_FILE_ID: props.getProperty('PRODUCT_DOWNLOAD_FILE_ID'),
+    PRODUCT_DOWNLOAD_URL_DEMO: props.getProperty('PRODUCT_DOWNLOAD_URL_DEMO') || 'https://drive.google.com/file/d/1A9l8Y5tzHZ_lSe8j_8WbuKYwT0j31UQB/view?usp=sharing',
+    PRODUCT_DOWNLOAD_FILE_ID_DEMO: props.getProperty('PRODUCT_DOWNLOAD_FILE_ID_DEMO')
   };
 }
 
@@ -765,14 +767,29 @@ function updateOrderStatus_(config, paypalOrderId, status) {
   return null;
 }
 
+// 商品IDに応じたダウンロード情報を返す。
+function resolveDownloadConfig_(config, productId) {
+  if (productId === 'bo-autobot-demo') {
+    return {
+      url: config.PRODUCT_DOWNLOAD_URL_DEMO || config.PRODUCT_DOWNLOAD_URL,
+      fileId: config.PRODUCT_DOWNLOAD_FILE_ID_DEMO || config.PRODUCT_DOWNLOAD_FILE_ID
+    };
+  }
+  return {
+    url: config.PRODUCT_DOWNLOAD_URL,
+    fileId: config.PRODUCT_DOWNLOAD_FILE_ID
+  };
+}
+
 // 商品ダウンロード案内メールを送信する。
-function sendProductEmail_(config, email, name) {
+function sendProductEmail_(config, email, name, productId) {
   logInfo_('sendProductEmail', { email: maskEmail_(email) });
+  var download = resolveDownloadConfig_(config, productId);
   var subject = '【BO-AutoBot】商品送付のご案内';
   var body = name + ' 様\n\n' +
     'BO-AutoBotのご購入ありがとうございます。\n' +
     '以下より商品をお受け取りください。\n\n' +
-    'ダウンロードURL：\n' + config.PRODUCT_DOWNLOAD_URL + '\n\n' +
+    'ダウンロードURL：\n' + download.url + '\n\n' +
     'ご不明点がございましたらお問い合わせください。';
   GmailApp.sendEmail(email, subject, body);
 }
@@ -794,18 +811,19 @@ function sendPaypalHoldEmail_(email, name) {
 }
 
 // 指定ファイルに閲覧権限を付与する。
-function grantProductDownloadViewer_(config, email) {
+function grantProductDownloadViewer_(config, email, productId) {
   // 設定されたファイルに対して閲覧権限のみを付与する。
-  if (!config.PRODUCT_DOWNLOAD_FILE_ID) {
+  var download = resolveDownloadConfig_(config, productId);
+  if (!download.fileId) {
     logWarn_('grantProductDownloadViewer skipped: empty file id', {});
-    return false;
+    return true;
   }
   try {
-    var file = DriveApp.getFileById(config.PRODUCT_DOWNLOAD_FILE_ID);
+    var file = DriveApp.getFileById(download.fileId);
     file.addViewer(email);
     logInfo_('grantProductDownloadViewer ok', {
       email: maskEmail_(email),
-      file_id: config.PRODUCT_DOWNLOAD_FILE_ID
+      file_id: download.fileId
     });
     return true;
   } catch (err) {
@@ -887,6 +905,7 @@ function sendBankTransferDownloadEmail() {
   var emailIndex = header.indexOf('customer_email');
   var nameIndex = header.indexOf('customer_name');
   var sentIndex = header.indexOf('download_sent_at');
+  var productIdIndex = header.indexOf('product_id');
 
   if (sentIndex === -1) {
     sheet.getRange(1, header.length + 1).setValue('download_sent_at');
@@ -899,6 +918,7 @@ function sendBankTransferDownloadEmail() {
     var email = row[emailIndex];
     var name = row[nameIndex];
     var sentAt = row[sentIndex];
+    var productId = productIdIndex !== -1 ? row[productIdIndex] : '';
 
     if (status !== 'paid') {
       continue;
@@ -906,10 +926,10 @@ function sendBankTransferDownloadEmail() {
     if (!email || sentAt) {
       continue;
     }
-    if (!grantProductDownloadViewer_(config, email)) {
+    if (!grantProductDownloadViewer_(config, email, productId)) {
       continue;
     }
-    sendProductEmail_(config, email, name || '');
+    sendProductEmail_(config, email, name || '', productId);
     sheet.getRange(i + 1, sentIndex + 1).setValue(new Date());
   }
 }
