@@ -1849,6 +1849,7 @@ button {
 }
 .p-contact-done .btn {
   margin: 60px auto 0;
+  width: 280px;
 }
 .p-contact-done .btn a {
   display: block;
