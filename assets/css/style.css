@@ -3495,6 +3495,31 @@ button {
   background: #ff48a0 !important;
 }
 
+.env-badge {
+  position: fixed;
+  top: 90px;
+  right: 16px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+.env-badge--test {
+  background: #f39c12;
+}
+@media screen and (max-width: 768px) {
+  .env-badge {
+    top: 70px;
+    right: 10px;
+    font-size: 11px;
+  }
+}
+
 /* c-cta
 --------------------------- */
 .btn {

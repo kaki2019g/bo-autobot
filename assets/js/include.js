@@ -67,6 +67,25 @@
   const gasEnv = await resolveGasEnv();
   applyGasEndpoints(gasEnv);
 
+  // テスト環境のみトップページにバッジを表示する。
+  const showEnvBadge = (env) => {
+    if (env !== "test") {
+      return;
+    }
+    const pathname = window.location.pathname;
+    const baseNoSlash = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+    const isTop = pathname === "/" || pathname === basePath || pathname === baseNoSlash || pathname.endsWith("/index.html");
+    if (!isTop) {
+      return;
+    }
+    const badge = document.createElement("div");
+    badge.className = "env-badge env-badge--test";
+    badge.textContent = "テスト環境";
+    document.body.appendChild(badge);
+  };
+
+  showEnvBadge(gasEnv);
+
   // ルート参照のリンク/画像パスをベースパスへ置き換える。
   const updateRootLinks = () => {
     const nodes = document.querySelectorAll('[href^="/"], [src^="/"]');
