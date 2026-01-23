@@ -27,6 +27,9 @@ function doPost(e) {
     if (action === 'capture_paypal') {
       return handlePaypalCapture_(params);
     }
+    if (action === 'cancel_paypal') {
+      return handlePaypalCancel_(params);
+    }
 
     var payload = normalizeOrderPayload_(e);
     logInfo_('route: payload', summarizeOrderPayload_(payload));
@@ -829,6 +832,44 @@ function notifyPaypalOrderAdmin_(paypalOrderId, order) {
 
   GmailApp.sendEmail(CONTACT_ADMIN_EMAIL, subject, body);
   logInfo_('notifyPaypalOrderAdmin', { to: maskEmail_(CONTACT_ADMIN_EMAIL), paypal_order_id: paypalOrderId });
+}
+
+// PayPalキャンセル時に注文ステータスを更新する。
+function handlePaypalCancel_(params) {
+  var config = getOrderConfig_();
+  var paypalOrderId = params.paypal_order_id || params.token || '';
+  if (!paypalOrderId) {
+    return jsonResponse_({ ok: false, error: 'missing_order_id' });
+  }
+
+  var sheet = getOrderSheet_(config);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return jsonResponse_({ ok: false, error: 'order_not_found' });
+  }
+  var header = values[0];
+  var paypalIndex = header.indexOf('paypal_order_id');
+  var statusIndex = header.indexOf('status');
+  var updatedIndex = header.indexOf('updated_at');
+  if (paypalIndex === -1 || statusIndex === -1) {
+    return jsonResponse_({ ok: false, error: 'missing_columns' });
+  }
+
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][paypalIndex] === paypalOrderId) {
+      var currentStatus = values[i][statusIndex];
+      if (currentStatus === 'paid') {
+        return jsonResponse_({ ok: true, status: 'paid', skipped: true });
+      }
+      sheet.getRange(i + 1, statusIndex + 1).setValue('cancel');
+      if (updatedIndex !== -1) {
+        sheet.getRange(i + 1, updatedIndex + 1).setValue(new Date());
+      }
+      return jsonResponse_({ ok: true, status: 'cancel' });
+    }
+  }
+
+  return jsonResponse_({ ok: false, error: 'order_not_found' });
 }
 
 // 入金済みかつ未送付の注文に対して、ダウンロード案内を送信する。
