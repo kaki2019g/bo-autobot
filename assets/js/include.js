@@ -35,6 +35,38 @@
   await inject("site-header", withBase("header.html"));
   await inject("site-footer", withBase("footer.html"));
 
+  // GASエンドポイントの環境切り替えを行う。
+  const resolveGasEnv = async () => {
+    try {
+      const res = await fetch(withBase("assets/config/gas-env.json"), { cache: "no-cache" });
+      if (!res.ok) {
+        return "prod";
+      }
+      const json = await res.json();
+      return json && (json.env === "test" || json.env === "prod") ? json.env : "prod";
+    } catch (err) {
+      return "prod";
+    }
+  };
+
+  const applyGasEndpoints = (env) => {
+    const forms = document.querySelectorAll("form[data-gas-endpoint-test], form[data-gas-endpoint-prod]");
+    forms.forEach((form) => {
+      const endpoint = env === "test" ? form.dataset.gasEndpointTest : form.dataset.gasEndpointProd;
+      if (!endpoint) {
+        return;
+      }
+      form.setAttribute("data-gas-endpoint", endpoint);
+      const action = form.getAttribute("action") || "";
+      if (action.indexOf("script.google.com") !== -1) {
+        form.setAttribute("action", endpoint);
+      }
+    });
+  };
+
+  const gasEnv = await resolveGasEnv();
+  applyGasEndpoints(gasEnv);
+
   // ルート参照のリンク/画像パスをベースパスへ置き換える。
   const updateRootLinks = () => {
     const nodes = document.querySelectorAll('[href^="/"], [src^="/"]');
