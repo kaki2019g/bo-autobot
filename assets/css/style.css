@@ -2422,6 +2422,8 @@ button {
 }
 .p-item--demo {
   background-repeat: repeat-y;
+  min-height: 100vh;
+  padding-bottom: 80px;
 }
 @media screen and (max-width: 768px) {
   .p-item--demo {
@@ -2439,6 +2441,9 @@ button {
   justify-content: space-between;
   gap: 0 7%;
   margin: 0 0 80px;
+}
+.p-item--demo .p-item-top {
+  margin-bottom: 40px;
 }
 @media screen and (max-width: 768px) {
   .p-item-top {
@@ -2602,7 +2607,7 @@ button {
 
 .p-item-demo {
   width: 420px;
-  margin: 30px auto 50px;
+  margin: 30px auto 30px;
 }
 @media screen and (max-width: 768px) {
   .p-item-demo {
