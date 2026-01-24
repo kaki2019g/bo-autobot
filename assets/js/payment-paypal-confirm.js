@@ -81,7 +81,12 @@
       if (history.length > 1) {
         history.back();
       } else {
-        window.location.href = new URL('/checkout/checkout.html', window.location.href).toString();
+        // GitHub Pagesのベースパスを考慮して戻り先URLを解決する。
+        var backPath = '/checkout/checkout.html';
+        var backUrl = typeof window.withBasePath === 'function'
+          ? window.withBasePath(backPath)
+          : new URL(backPath, window.location.href).toString();
+        window.location.href = backUrl;
       }
     });
   }

@@ -1,6 +1,10 @@
 (function() {
   // セッションデータを読み込み、銀行振込注文の送信処理を行う。
-  var doneUrl = new URL('/payment/bank/payment-bank-done.html', window.location.href).toString();
+  // GitHub Pagesのベースパスを考慮して完了画面URLを解決する。
+  var donePath = '/payment/bank/payment-bank-done.html';
+  var doneUrl = typeof window.withBasePath === 'function'
+    ? window.withBasePath(donePath)
+    : new URL(donePath, window.location.href).toString();
   var form = document.querySelector('form.wpcf7-form');
   if (!form) {
     return;

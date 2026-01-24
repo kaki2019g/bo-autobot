@@ -6,7 +6,12 @@
       const raw = sessionStorage.getItem("paypalOrderData");
       const data = raw ? JSON.parse(raw) : null;
       if (data && data.product_id === "bo-autobot-demo") {
-        backLink.setAttribute("href", "/checkout/checkout.html?product=demo");
+        // GitHub Pagesのベースパスを考慮して戻り先URLを解決する。
+        const demoPath = "/checkout/checkout.html?product=demo";
+        const demoUrl = typeof window.withBasePath === "function"
+          ? window.withBasePath(demoPath)
+          : new URL(demoPath, window.location.href).toString();
+        backLink.setAttribute("href", demoUrl);
       }
     } catch (err) {
     }
