@@ -81,7 +81,7 @@
       if (history.length > 1) {
         history.back();
       } else {
-        window.location.href = new URL('checkout.html', window.location.href).toString();
+        window.location.href = new URL('/checkout/checkout.html', window.location.href).toString();
       }
     });
   }

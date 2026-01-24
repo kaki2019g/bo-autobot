@@ -1,6 +1,6 @@
 (function() {
   // セッションデータを読み込み、銀行振込注文の送信処理を行う。
-  var doneUrl = new URL('payment-bank-done.html', window.location.href).toString();
+  var doneUrl = new URL('/payment/bank/payment-bank-done.html', window.location.href).toString();
   var form = document.querySelector('form.wpcf7-form');
   if (!form) {
     return;
@@ -79,7 +79,7 @@
       if (history.length > 1) {
         history.back();
       } else {
-        window.location.href = new URL('checkout.html', window.location.href).toString();
+        window.location.href = new URL('/checkout/checkout.html', window.location.href).toString();
       }
     });
   }

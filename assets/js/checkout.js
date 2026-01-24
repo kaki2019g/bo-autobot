@@ -130,7 +130,7 @@
       }
 
       showMessage("");
-      goToConfirmPage("payment-bank-confirm.html");
+      goToConfirmPage("/payment/bank/payment-bank-confirm.html");
       return;
     }
 
@@ -150,7 +150,7 @@
       }
 
       showMessage("");
-      goToConfirmPage("payment-paypal-confirm.html");
+      goToConfirmPage("/payment/paypal/payment-paypal-confirm.html");
     }
   });
 })();
