@@ -18,6 +18,7 @@
     }
     return basePath + path;
   };
+  window.withBasePath = withBase;
 
   // ヘッダー/フッターのHTMLを読み込んで挿入する。
   const inject = async (id, url) => {

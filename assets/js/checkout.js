@@ -102,6 +102,10 @@
 
   // 確認画面へ遷移する。
   function goToConfirmPage(path) {
+    if (typeof window.withBasePath === "function") {
+      window.location.href = window.withBasePath(path);
+      return;
+    }
     window.location.href = new URL(path, window.location.href).toString();
   }
 
@@ -130,7 +134,7 @@
       }
 
       showMessage("");
-      goToConfirmPage("../payment/bank/payment-bank-confirm.html");
+      goToConfirmPage("/payment/bank/payment-bank-confirm.html");
       return;
     }
 
@@ -150,7 +154,7 @@
       }
 
       showMessage("");
-      goToConfirmPage("../payment/paypal/payment-paypal-confirm.html");
+      goToConfirmPage("/payment/paypal/payment-paypal-confirm.html");
     }
   });
 })();
