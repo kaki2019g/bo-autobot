@@ -714,7 +714,7 @@ function getPayPalAccessToken_(config) {
 
 // PayPal環境に応じたAPIベースURLを返す。
 function getPayPalApiBase_(config) {
-  return config.PAYPAL_ENV === 'live'
+  return config.PAYPAL_ENV === 'sandbox'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 }

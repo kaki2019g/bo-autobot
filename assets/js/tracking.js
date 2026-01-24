@@ -1,20 +1,7 @@
 (() => {
-  // GitHub Pages配信時にベースパスを調整する。
-  const host = window.location.hostname;
-  const path = window.location.pathname;
-  let base = "/";
-  if (host.endsWith("github.io")) {
-    const parts = path.split("/").filter(Boolean);
-    base = parts.length ? `/${parts[0]}/` : "/";
-  }
-
   const head = document.head;
   if (head) {
-    // baseタグとgtagスクリプトを挿入する。
-    const baseTag = document.createElement("base");
-    baseTag.href = base;
-    head.insertBefore(baseTag, head.firstChild);
-
+    // gtagスクリプトを挿入する。
     const gtagScript = document.createElement("script");
     gtagScript.async = true;
     gtagScript.src =
