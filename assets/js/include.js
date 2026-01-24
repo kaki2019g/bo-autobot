@@ -67,15 +67,9 @@
   const gasEnv = await resolveGasEnv();
   applyGasEndpoints(gasEnv);
 
-  // テスト環境のみトップページにバッジを表示する。
+  // テスト環境のみ全ページにバッジを表示する。
   const showEnvBadge = (env) => {
     if (env !== "test") {
-      return;
-    }
-    const pathname = window.location.pathname;
-    const baseNoSlash = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
-    const isTop = pathname === "/" || pathname === basePath || pathname === baseNoSlash || pathname.endsWith("/index.html");
-    if (!isTop) {
       return;
     }
     const badge = document.createElement("div");
