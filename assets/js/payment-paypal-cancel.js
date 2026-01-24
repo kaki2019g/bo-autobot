@@ -1,4 +1,17 @@
 (() => {
+  // キャンセル時に商品種別に応じて戻り先を調整する。
+  const backLink = document.getElementById("paypal-cancel-link");
+  if (backLink) {
+    try {
+      const raw = sessionStorage.getItem("paypalOrderData");
+      const data = raw ? JSON.parse(raw) : null;
+      if (data && data.product_id === "bo-autobot-demo") {
+        backLink.setAttribute("href", "/checkout/checkout.html?product=demo");
+      }
+    } catch (err) {
+    }
+  }
+
   // PayPalキャンセル時に注文ステータスをキャンセルへ更新する。
   const configEl = document.getElementById("paypal-cancel-config");
   if (!configEl) {
