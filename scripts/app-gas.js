@@ -1,11 +1,36 @@
 const CONTACT_SPREADSHEET_ID = '1hhvEM7c2QVxjX7JiIQQI90vvc-bdY1_UOIaCcOo-B5Q';
 const CONTACT_SHEET_NAME = 'inquiries';
 const CONTACT_ADMIN_EMAIL = 'kaki2019g@gmail.com';
+const PRODUCT_SHEET_NAME = 'products';
 const CONTACT_REPLY_FROM_NAME = 'bo-autobot';
 const CONTACT_REPLY_SUBJECT = '【受付完了】お問い合わせありがとうございます（受付番号: {id}）';
 const CONTACT_TIMEZONE = 'Asia/Tokyo';
 const CONTACT_REQUIRED_FIELDS = ['your-name', 'your-email', 'your-subject', 'your-message'];
 const LOG_VERBOSE = true;
+const ORDER_TOKEN_TTL_MS = 10 * 60 * 1000;
+const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+const ATTACHMENT_ALLOWED_MIME = [
+  'application/pdf',
+  'application/zip',
+  'image/png',
+  'image/jpeg',
+  'application/octet-stream'
+];
+const ATTACHMENT_ALLOWED_EXT = ['.pdf', '.zip', '.png', '.jpg', '.jpeg', '.ex4'];
+
+// メンテナンス: 商品カタログとクーポンをスプレッドシートで管理する
+const PRODUCT_COLUMNS = {
+  product_id: 'product_id',
+  product_name: 'product_name',
+  price: 'price',
+  currency: 'currency',
+  active: 'active',
+  coupon_code: 'coupon_code',
+  discount_type: 'discount_type',
+  discount_value: 'discount_value',
+  valid_from: 'valid_from',
+  valid_to: 'valid_to'
+};
 
 // POSTリクエストの入口。Webhook/問い合わせ/注文処理へ分岐する。
 function doPost(e) {
@@ -29,6 +54,9 @@ function doPost(e) {
     }
     if (action === 'cancel_paypal') {
       return handlePaypalCancel_(params);
+    }
+    if (action === 'issue_token') {
+      return handleIssueToken_(params);
     }
 
     var payload = normalizeOrderPayload_(e);
@@ -62,6 +90,14 @@ function handleContact_(params) {
   if (missing.length > 0) {
     logWarn_('handleContact missing fields', { missing: missing });
     return jsonResponse_({ ok: false, error: 'missing_fields', fields: missing });
+  }
+
+  if (params['signal-file-data'] || params['signal-file-name']) {
+    var attachmentCheck = validateAttachment_(params['signal-file-data'], params['signal-file-name']);
+    if (!attachmentCheck.ok) {
+      logWarn_('handleContact invalid attachment', { error: attachmentCheck.error });
+      return jsonResponse_({ ok: false, error: 'invalid_attachment' });
+    }
   }
 
   var now = new Date();
@@ -215,13 +251,50 @@ function buildAttachmentBlob_(dataUrl, filename) {
       return null;
     }
     var contentType = parts[0].match(/data:(.*);base64/);
-    var mime = contentType && contentType[1] ? contentType[1] : 'application/zip';
+    var mime = contentType && contentType[1] ? contentType[1] : 'application/octet-stream';
     var bytes = Utilities.base64Decode(parts[1]);
     return Utilities.newBlob(bytes, mime, filename);
   } catch (err) {
     logWarn_('buildAttachmentBlob failed', { error: String(err) });
     return null;
   }
+}
+
+// 添付ファイルの検証を行う。
+function validateAttachment_(dataUrl, filename) {
+  if (!dataUrl || !filename) {
+    return { ok: false, error: 'missing_attachment' };
+  }
+  var parts = String(dataUrl).split(',');
+  if (parts.length < 2) {
+    return { ok: false, error: 'invalid_data_url' };
+  }
+  var meta = parts[0];
+  var contentTypeMatch = meta.match(/data:(.*);base64/);
+  var mime = contentTypeMatch && contentTypeMatch[1] ? contentTypeMatch[1] : 'application/octet-stream';
+  var ext = getFileExtension_(filename);
+  if (!isAllowedMime_(mime) || !isAllowedExt_(ext)) {
+    return { ok: false, error: 'invalid_attachment_type' };
+  }
+  var bytes = Utilities.base64Decode(parts[1]);
+  if (bytes.length > ATTACHMENT_MAX_BYTES) {
+    return { ok: false, error: 'attachment_too_large' };
+  }
+  return { ok: true };
+}
+
+function getFileExtension_(filename) {
+  var lower = String(filename || '').toLowerCase();
+  var idx = lower.lastIndexOf('.');
+  return idx !== -1 ? lower.slice(idx) : '';
+}
+
+function isAllowedMime_(mime) {
+  return ATTACHMENT_ALLOWED_MIME.indexOf(String(mime || '').toLowerCase()) !== -1;
+}
+
+function isAllowedExt_(ext) {
+  return ATTACHMENT_ALLOWED_EXT.indexOf(String(ext || '').toLowerCase()) !== -1;
 }
 
 // 銀行振込注文の登録・通知を行う。
@@ -239,7 +312,15 @@ function handleBankOrder_(payload) {
     return jsonResponse_({ ok: false, error: 'invalid_payment_method' });
   }
 
+  if (!verifyOrderToken_(payload)) {
+    return jsonResponse_({ ok: false, error: 'invalid_order_token' });
+  }
   validateOrderPayload_(payload);
+  var pricing = resolvePricing_(payload);
+  payload.product_id = pricing.product_id;
+  payload.product_name = pricing.product_name;
+  payload.amount = pricing.amount;
+  payload.currency = pricing.currency;
   var config = getOrderConfig_();
   var orderId = Utilities.getUuid();
   var now = new Date();
@@ -322,6 +403,14 @@ function handlePaypalCreateOrder_(payload) {
   logInfo_('handlePaypalCreateOrder start', summarizeOrderPayload_(payload));
   var config = getOrderConfig_();
   validateOrderPayload_(payload);
+  if (!verifyOrderToken_(payload)) {
+    return jsonResponse_({ ok: false, error: 'invalid_order_token' });
+  }
+  var pricing = resolvePricing_(payload);
+  payload.product_id = pricing.product_id;
+  payload.product_name = pricing.product_name;
+  payload.amount = pricing.amount;
+  payload.currency = pricing.currency;
 
   if (payload.payment_method !== 'paypal') {
     logWarn_('handlePaypalCreateOrder invalid payment method', { payment_method: payload.payment_method });
@@ -445,6 +534,8 @@ function normalizeOrderPayload_(e) {
       product_name: params.product_name,
       amount: Number(params.amount),
       currency: params.currency,
+      coupon_code: params.coupon_code || '',
+      order_token: params.order_token || '',
       payment_method: params.payment_method,
       customer: {
         first_name: params.billing_first_name || '',
@@ -477,6 +568,10 @@ function validateOrderPayload_(payload) {
   if (!payload.customer.first_name || !payload.customer.last_name || !payload.customer.email) {
     logWarn_('validateOrderPayload missing customer', {});
     throw new Error('missing_customer');
+  }
+  if (!payload.product_id) {
+    logWarn_('validateOrderPayload missing product', {});
+    throw new Error('missing_product');
   }
 }
 
@@ -570,6 +665,183 @@ function sendBankTransferEmail_(config, customer) {
     '公式LINEにてお振込のご連絡をいただけますと、確認がスムーズです。\n\n' +
     'ご入金確認後、商品をお送りいたします。';
   GmailApp.sendEmail(customer.email, subject, body);
+}
+
+// 注文トークンを発行する。
+function handleIssueToken_(params) {
+  try {
+    var productId = params.product_id || '';
+    var couponCode = params.coupon_code || '';
+    var product = getProductById_(productId);
+    if (!product || !String(product[PRODUCT_COLUMNS.active]).match(/^(true|1|yes|active)$/i)) {
+      return jsonResponse_({ ok: false, error: 'product_inactive' });
+    }
+    var couponCheck = applyCoupon_(product, couponCode);
+    if (!couponCheck.ok) {
+      return jsonResponse_({ ok: false, error: couponCheck.error });
+    }
+    var token = issueOrderToken_(productId, couponCode);
+    return jsonResponse_({ ok: true, token: token });
+  } catch (err) {
+    logError_('handleIssueToken error', err);
+    return jsonResponse_({ ok: false, error: String(err) });
+  }
+}
+
+// 注文トークンを検証する。
+function verifyOrderToken_(payload) {
+  if (!payload || !payload.order_token) {
+    return false;
+  }
+  var secret = getOrderTokenSecret_();
+  if (!secret) {
+    logWarn_('verifyOrderToken missing secret', {});
+    return false;
+  }
+  var parts = String(payload.order_token).split('.');
+  if (parts.length !== 2) {
+    return false;
+  }
+  var payloadB64 = parts[0];
+  var sig = parts[1];
+  var expected = Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature(payloadB64, secret)
+  );
+  if (expected !== sig) {
+    return false;
+  }
+  var decoded = Utilities.newBlob(Utilities.base64DecodeWebSafe(payloadB64)).getDataAsString();
+  var data = JSON.parse(decoded);
+  if (!data || !data.iat || !data.product_id) {
+    return false;
+  }
+  if (data.product_id !== payload.product_id) {
+    return false;
+  }
+  if (String(data.coupon_code || '') !== String(payload.coupon_code || '')) {
+    return false;
+  }
+  if (Date.now() - Number(data.iat) > ORDER_TOKEN_TTL_MS) {
+    return false;
+  }
+  return true;
+}
+
+// 注文トークンを生成する。
+function issueOrderToken_(productId, couponCode) {
+  var secret = getOrderTokenSecret_();
+  if (!secret) {
+    throw new Error('missing_order_token_secret');
+  }
+  var payload = JSON.stringify({
+    product_id: String(productId || ''),
+    coupon_code: String(couponCode || ''),
+    iat: Date.now()
+  });
+  var payloadB64 = Utilities.base64EncodeWebSafe(payload);
+  var sig = Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature(payloadB64, secret)
+  );
+  return payloadB64 + '.' + sig;
+}
+
+// トークン署名の秘密鍵を取得する。
+function getOrderTokenSecret_() {
+  var props = PropertiesService.getScriptProperties();
+  return props.getProperty('ORDER_TOKEN_SECRET');
+}
+
+// 商品カタログシートを取得する。
+function getProductSheet_() {
+  var ss = SpreadsheetApp.openById(getOrderConfig_().SHEET_ID);
+  return ss.getSheetByName(PRODUCT_SHEET_NAME);
+}
+
+// 商品カタログの1行を読み取る。
+function getProductById_(productId) {
+  var sheet = getProductSheet_();
+  if (!sheet) {
+    throw new Error('product_sheet_not_found');
+  }
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    throw new Error('product_empty');
+  }
+  var header = values[0];
+  var idIndex = header.indexOf(PRODUCT_COLUMNS.product_id);
+  if (idIndex === -1) {
+    throw new Error('product_header_invalid');
+  }
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][idIndex]) === String(productId)) {
+      return mapProductRow_(header, values[i]);
+    }
+  }
+  return null;
+}
+
+// 商品行をオブジェクトへマッピングする。
+function mapProductRow_(header, row) {
+  var obj = {};
+  for (var i = 0; i < header.length; i++) {
+    obj[header[i]] = row[i];
+  }
+  return obj;
+}
+
+// クーポン適用後の金額を算出する。
+function applyCoupon_(product, couponCode) {
+  var price = Number(product[PRODUCT_COLUMNS.price]);
+  if (!couponCode) {
+    return { ok: true, amount: price, coupon_applied: false };
+  }
+  var code = String(couponCode || '').trim().toLowerCase();
+  var productCode = String(product[PRODUCT_COLUMNS.coupon_code] || '').trim().toLowerCase();
+  if (!productCode || productCode !== code) {
+    return { ok: false, error: 'invalid_coupon' };
+  }
+
+  var type = String(product[PRODUCT_COLUMNS.discount_type] || '').trim();
+  var value = Number(product[PRODUCT_COLUMNS.discount_value] || 0);
+  var now = new Date();
+  var validFrom = product[PRODUCT_COLUMNS.valid_from] ? new Date(product[PRODUCT_COLUMNS.valid_from]) : null;
+  var validTo = product[PRODUCT_COLUMNS.valid_to] ? new Date(product[PRODUCT_COLUMNS.valid_to]) : null;
+  if (validFrom && now < validFrom) {
+    return { ok: false, error: 'coupon_not_started' };
+  }
+  if (validTo && now > validTo) {
+    return { ok: false, error: 'coupon_expired' };
+  }
+  if (type === 'percent') {
+    var percent = Math.max(0, Math.min(100, value));
+    return { ok: true, amount: Math.max(0, Math.floor(price * (100 - percent) / 100)), coupon_applied: true };
+  }
+  if (type === 'fixed') {
+    return { ok: true, amount: Math.max(0, price - value), coupon_applied: true };
+  }
+  return { ok: false, error: 'invalid_discount_type' };
+}
+
+// 商品カタログを参照して価格/通貨を確定する。
+function resolvePricing_(payload) {
+  var product = getProductById_(payload.product_id);
+  if (!product) {
+    throw new Error('product_not_found');
+  }
+  if (!String(product[PRODUCT_COLUMNS.active]).match(/^(true|1|yes|active)$/i)) {
+    throw new Error('product_inactive');
+  }
+  var result = applyCoupon_(product, payload.coupon_code || '');
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  return {
+    product_id: String(product[PRODUCT_COLUMNS.product_id]),
+    product_name: String(product[PRODUCT_COLUMNS.product_name]),
+    amount: Number(result.amount),
+    currency: String(product[PRODUCT_COLUMNS.currency] || 'JPY'),
+    coupon_applied: !!result.coupon_applied
+  };
 }
 
 // PayPalの注文作成APIを呼び出す。
@@ -719,8 +991,8 @@ function getPayPalAccessToken_(config) {
 // PayPal環境に応じたAPIベースURLを返す。
 function getPayPalApiBase_(config) {
   return config.PAYPAL_ENV === 'sandbox'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+    ? 'https://api-m.sandbox.paypal.com'
+    : 'https://api-m.paypal.com';
 }
 
 // WebhookイベントからPayPal注文IDを抽出する。
