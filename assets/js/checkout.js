@@ -116,21 +116,22 @@
 
   // トークン発行リクエストを行う。
   function issueOrderToken(payload) {
-    var endpoint = form.getAttribute("data-gas-endpoint");
-    if (!endpoint || endpoint.indexOf("script.google.com") === -1) {
+    if (typeof window.getGasEndpoint !== "function") {
       return Promise.reject(new Error("invalid_endpoint"));
     }
     var params = new URLSearchParams();
     params.set("action", "issue_token");
     params.set("product_id", payload.product_id || "");
     params.set("coupon_code", payload.coupon_code || "");
-    return fetch(endpoint, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-      },
-      body: params.toString()
+    return window.getGasEndpoint().then(function(endpoint) {
+      return fetch(endpoint, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body: params.toString()
+      });
     }).then(function(response) {
       if (!response.ok) {
         throw new Error("token_request_failed");

@@ -79,29 +79,20 @@
     buttons.forEach(function(button) {
       button.disabled = true;
     });
-    var endpoint = form.getAttribute('data-gas-endpoint');
-    // GASのエンドポイントを検証する。
-    if (!endpoint || endpoint.indexOf('script.google.com') === -1) {
-      if (error) {
-        error.textContent = '送信先の設定が未完了です。お手数ですがお問い合わせください。';
-      }
-      form.dataset.submitting = 'false';
-      if (loading) {
-        loading.style.display = 'none';
-      }
-      buttons.forEach(function(button) {
-        button.disabled = false;
-      });
-      return;
-    }
     var payload = new URLSearchParams(new FormData(form));
-    fetch(endpoint, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-      },
-      body: payload.toString()
+    // 共通設定の読み込み完了後にGASへ送信する。
+    var endpointPromise = typeof window.getGasEndpoint === 'function'
+      ? window.getGasEndpoint()
+      : Promise.reject(new Error('invalid_endpoint'));
+    endpointPromise.then(function(endpoint) {
+      return fetch(endpoint, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        },
+        body: payload.toString()
+      });
     }).then(function(response) {
       if (!response.ok) {
         throw new Error('Request failed');
@@ -121,6 +112,8 @@
     }).catch(function(err) {
       if (err && err.message === 'invalid_attachment') {
         alert('添付ファイルの形式が無効です');
+      } else if (err && (err.message === 'invalid_endpoint' || String(err.message || '').indexOf('GAS') !== -1)) {
+        alert('送信先の設定を読み込めませんでした。時間をおいて再度お試しください。');
       } else {
         alert('送信に失敗しました。時間をおいて再度お試しください。');
       }

@@ -1,4 +1,3 @@
-const CONTACT_SPREADSHEET_ID = '1hhvEM7c2QVxjX7JiIQQI90vvc-bdY1_UOIaCcOo-B5Q';
 const CONTACT_SHEET_NAME = 'inquiries';
 const CONTACT_ADMIN_EMAIL = 'kaki2019g@gmail.com';
 const PRODUCT_SHEET_NAME = 'products';
@@ -126,7 +125,8 @@ function handleContact_(params) {
 // 問い合わせ記録用シートを取得し、必要なら作成/ヘッダ更新する。
 function getContactSheet_() {
   logInfo_('getContactSheet start', {});
-  var ss = SpreadsheetApp.openById(CONTACT_SPREADSHEET_ID);
+  var config = getOrderConfig_();
+  var ss = SpreadsheetApp.openById(config.SHEET_ID);
   var sheet = ss.getSheetByName(CONTACT_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(CONTACT_SHEET_NAME);
