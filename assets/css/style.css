@@ -30,6 +30,7 @@ body {
 
 main {
   display: block;
+  flex: 1 0 auto;
 }
 
 address,
@@ -409,6 +410,9 @@ body {
   min-width: 350px;
   width: 100%;
   overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 @media screen and (max-width: 768px) {
   body {
@@ -757,8 +761,10 @@ button {
   color: #fff;
 }
 .l-footer-bottom__flex {
-  display: flex;
-  gap: 0 10%;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) max-content max-content minmax(260px, 320px);
+  gap: 24px clamp(24px, 4vw, 56px);
+  align-items: start;
 }
 @media screen and (max-width: 768px) {
   .l-footer-bottom__flex {
@@ -771,6 +777,11 @@ button {
 .l-footer-bottom__logo {
   font-size: clamp(24px, 4.68vw, 48px);
   font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.l-footer-bottom__nav a {
+  white-space: nowrap;
 }
 .l-footer-bottom__sns {
   display: flex;
@@ -800,7 +811,7 @@ button {
 .l-footer-bottom__spec {
   color: #fff;
   max-width: 320px;
-  margin-left: 20px;
+  margin-left: 0;
 }
 .l-footer-bottom__spec-title {
   font-weight: 700;
@@ -813,6 +824,18 @@ button {
   padding: 0;
   font-size: 13px;
   line-height: 1.6;
+}
+@media screen and (min-width: 769px) and (max-width: 900px) {
+  .l-footer-bottom__flex {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 1fr);
+  }
+  .l-footer-bottom__sns {
+    grid-column: 1;
+  }
+  .l-footer-bottom__spec {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 @media screen and (max-width: 768px) {
   .l-footer-bottom__spec {
@@ -969,6 +992,29 @@ button {
   .mainv__text {
     font-size: clamp(16px, 1.6vw, 24px);
     line-height: 1.2;
+  }
+}
+
+.mainv__btn {
+  width: 225px;
+  margin-top: 24px;
+}
+.btn.mainv__btn a {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  font-size: clamp(16px, 1.6vw, 24px);
+  padding: 15px 20px;
+  white-space: nowrap;
+}
+@media screen and (max-width: 768px) {
+  .mainv__btn {
+    width: min(225px, 100%);
+    margin-top: 14px;
+  }
+  .btn.mainv__btn a {
+    font-size: 16px;
+    padding: 15px 20px;
   }
 }
 
