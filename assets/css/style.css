@@ -1116,7 +1116,7 @@ button {
   width: 68%;
   max-width: 720px;
   margin: 45px auto 0;
-  text-align: left;
+  text-align: center;
   line-height: 1.8;
 }
 @media screen and (max-width: 768px) {
