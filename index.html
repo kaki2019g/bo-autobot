@@ -35,7 +35,7 @@
           <h1 class="mainv__title">起動して、<br class="sp">あとはおまかせ。</h1>
           <p class="mainv__text">サイン検知 & <br class="sp">自動エントリーシステム<br>BO-AutoBot</p>
           <div class="btn mainv__btn">
-            <a href="/checkout/checkout.html">購入する</a>
+            <a href="/checkout/checkout.html" data-purchase-link>購入する</a>
           </div>
         </div>
         <div class="mainv__image">
@@ -127,8 +127,8 @@
     </section>
     <section class="p-home-flow">
       <div class="l-inner js-fade">
-        <h2 class="p-home-flow__title sec-h2">お受け取りまでの流れ</h2>
-        <p class="p-home-flow__lead">簡単3STEPでご利用が可能です。</p>
+        <h2 class="p-home-flow__title sec-h2">商品お受け取りまでの流れ</h2>
+        <p class="p-home-flow__lead" data-infotop-text="ご購入後、案内書(PDF)に従ってフォーム送信してください。公式LINEは購入後サポート用です（登録は任意です）。">簡単3STEPでご利用が可能です。</p>
         <div class="p-home-flow__grid">
           <div class="p-home-flow__item">
             <p class="p-home-flow__item--title oswald">STEP01</p>
@@ -142,14 +142,14 @@
             <div class="p-home-flow__item--icon">
               <img src="assets/img/home/flow-icon-mail.svg" alt="メールでDLリンクが届く">
             </div>
-            <p class="p-home-flow__item--text">メールで<br>DLリンクが届く</p>
+            <p class="p-home-flow__item--text" data-infotop-html="案内書(PDF)をDLし<br>フォーム送信">メールでDLリンクが届く</p>
           </div>
           <div class="p-home-flow__item item03">
             <p class="p-home-flow__item--title oswald">STEP03</p>
             <div class="p-home-flow__item--icon">
               <img src="assets/img/home/flow-icon-dl.svg" alt="DLして完了">
             </div>
-            <p class="p-home-flow__item--text">DLして完了！</p>
+            <p class="p-home-flow__item--text" data-infotop-html="自動返信メールで<br>DLリンクを受け取り">DLして完了！</p>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@
         <h2 class="p-home-faq__title sec-h2 pink">よくある質問</h2>
         <div class="accordion">
           <div class="accordion-container">
-            <div class="accordion-item">
+            <div class="accordion-item" data-channel-hidden="infotop">
               <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> どこのサイトに対応していますか？
               </h3>
               <div class="accordion-content">
@@ -167,10 +167,9 @@
               </div>
             </div>
             <div class="accordion-item">
-              <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> システム起動中に他の作業は出来ますか？
-              </h3>
+              <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> 所持しているサインツールが対応しているか知りたい</h3>
               <div class="accordion-content">
-                <p><span class="green">A.</span> 可能です。</p>
+                <p><span class="green">A.</span> お問い合わせページよりご連絡下さい。</p>
               </div>
             </div>
             <div class="accordion-item">
@@ -179,16 +178,23 @@
                 <p><span class="green">A.</span> 対応しています。サインツールごとに設定が可能です。</p>
               </div>
             </div>
-            <div class="accordion-item">
+            <!-- <div class="accordion-item">
               <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> 試用版はありますか？</h3>
               <div class="accordion-content">
-                <p><span class="green">A.</span> 一ヶ月の期間、デモ口座でお使いいただける試用版がございます。</p>
+                <p><span class="green">A.</span> 1ヶ月の期間、デモ口座でお使いいただける試用版がございます。</p>
               </div>
-            </div>
+            </div> -->
             <div class="accordion-item">
               <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> サポートはありますか？</h3>
               <div class="accordion-content">
-                <p><span class="green">A.</span> ご購入後、3ヶ月のサポートがございます。不明点がありましたら、お気軽にお問い合わせ下さい。(公式ラインからご連絡いただいても構いません。)</p>
+                <p><span class="green">A.</span> ご購入後、3ヶ月のサポートがございます。</p>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h3 class="accordion-title js-accordion-title"><span class="pink">Q.</span> システム起動中に他の作業は出来ますか？
+              </h3>
+              <div class="accordion-content">
+                <p><span class="green">A.</span> 可能です。</p>
               </div>
             </div>
           </div>

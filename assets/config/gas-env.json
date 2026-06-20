@@ -1,8 +1,32 @@
 {
   "env": "test",
+  "sales_channel": "infotop",
+  "gas_profile": "infotop",
   "gas_endpoints": {
     "test": "https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec",
     "prod": "https://script.google.com/macros/s/AKfycbwGIG3xED_9bl7om-nmmFoZXMfysYAYUe470UFf3-1qaFMXsubahMdWBJT08ZcMu5I/exec"
   },
-  "last_commit_at": "2026-06-18T14:13:19+09:00"
+  "gas_endpoint_profiles": {
+    "normal": {
+      "test": "https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec",
+      "prod": "https://script.google.com/macros/s/AKfycbwGIG3xED_9bl7om-nmmFoZXMfysYAYUe470UFf3-1qaFMXsubahMdWBJT08ZcMu5I/exec"
+    },
+    "infotop": {
+      "test": "https://script.google.com/macros/s/AKfycbzemnbj6tWIt2ljWaLyX8aqS9VyufA7z_QoH-FLcDiL13DBGnx5M9Ni_1ziS_y0aA/exec",
+      "prod": "https://script.google.com/macros/s/AKfycbwGIG3xED_9bl7om-nmmFoZXMfysYAYUe470UFf3-1qaFMXsubahMdWBJT08ZcMu5I/exec"
+    }
+  },
+  "sales_channels": {
+    "normal": {
+      "purchase_url": "/checkout/checkout.html",
+      "hide_demo": false,
+      "checkout_redirect": false
+    },
+    "infotop": {
+      "purchase_url": "https://www.infotop.jp/order.php?iid=000000",
+      "hide_demo": true,
+      "checkout_redirect": true
+    }
+  },
+  "last_commit_at": "2026-06-20T18:09:02+09:00"
 }

@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const host = "127.0.0.1";
-const port = 8080;
+const port = Number(process.argv[2] || process.env.PORT || 8080);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
