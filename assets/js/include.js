@@ -20,6 +20,18 @@
   };
   window.withBasePath = withBase;
 
+  // GitHub Pagesのベースパスを除いた現在ページのパスを取得する。
+  const getLocalPath = () => {
+    let pathname = window.location.pathname || "/";
+    if (basePath !== "/" && pathname.startsWith(basePath)) {
+      pathname = `/${pathname.slice(basePath.length)}`;
+    }
+    if (!pathname.startsWith("/")) {
+      pathname = `/${pathname}`;
+    }
+    return pathname;
+  };
+
   // GAS設定と販売チャネル設定を読み込み、通常版/インフォトップ版を切り替える。
   const loadGasConfig = async () => {
     const res = await fetch(withBase("assets/config/gas-env.json"), { cache: "no-cache" });
@@ -97,6 +109,20 @@
     return withBase(url);
   };
 
+  // インフォトップ版ではLPと特商法ページ以外の旧ページをTOPへ集約する。
+  const redirectInfotopLegacyPage = (config) => {
+    if (!config || config.salesChannel !== "infotop") {
+      return false;
+    }
+    const allowedPaths = ["/", "/index", "/index.html", "/info/legal", "/info/legal.html"];
+    const localPath = getLocalPath();
+    if (allowedPaths.indexOf(localPath) !== -1) {
+      return false;
+    }
+    window.location.replace(withBase("/"));
+    return true;
+  };
+
   // 販売チャネルごとの購入導線、文言、デモ版表示を反映する。
   const applySalesChannel = (config) => {
     if (!config) {
@@ -169,9 +195,12 @@
 
   // 共通パーツ、環境表示、共通スクリプトを順に初期化する。
   const initializePage = async () => {
+    const gasConfig = await window.gasConfigReady;
+    if (redirectInfotopLegacyPage(gasConfig)) {
+      return;
+    }
     await inject("site-header", withBase("header.html"));
     await inject("site-footer", withBase("footer.html"));
-    const gasConfig = await window.gasConfigReady;
     applySalesChannel(gasConfig);
     showEnvBadge(gasConfig);
     updateRootLinks();
