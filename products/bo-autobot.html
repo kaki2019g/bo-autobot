@@ -18,7 +18,7 @@
   <meta name="twitter:title" content="BO-AutoBot｜商品詳細・自動エントリーシステム">
   <meta name="twitter:description" content="サインを検知し、エントリーを自動化。BO-AutoBotの商品詳細ページです。">
   <meta name="twitter:image" content="https://bo-autobot.com/assets/img/home/cta-img01.png">
-  <link rel="icon" href="../assets/img/common/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/common/bo-favicon-white-32.png">
   <link rel="stylesheet" href="../assets/css/style.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
@@ -41,21 +41,22 @@
             <h1 class="p-item-top__text--name">BO-AutoBot</h1>
             <div class="p-item-top__text--detail">
               <p>概要</p>
-              <p class="p-item-top__text--note">MT4チャートに表示されるサイン(矢印等)を検知し、<br> 自動エントリーを実施します。</p>
+              <p class="p-item-top__text--note">MT4チャートに表示されるサイン(矢印等)を検知し、<br> 自動エントリーを行います。</p>
               <p class="p-item-top__text--section">内容</p>
               <ul>
                 <li>サイン検知用インジケーター</li>
-                <li>自動エントリーツール</li>
-                <li>導入手順書</li>
+                <li>自動エントリーソフト</li>
+                <li>設定マニュアル</li>
+                <li>3ヶ月サポート（公式LINE）</li>
               </ul>
-              <p>配送方法</p>
-              <p class="p-item-top__text--note">決済確認後、メールでダウンロードリンクをお送りします。</p>
+              <p>商品引き渡し方法</p>
+              <p class="p-item-top__text--note" data-infotop-text="ご購入後、マイページから案内書(PDF)をダウンロードし、案内書に従ってフォーム送信を行ってください。フォーム送信完了後、自動返信メールでシステム一式のダウンロードリンクをお送りします。公式LINEは購入後のサポート用です（登録は任意です）。">決済確認後、メールでダウンロードリンクをお送りします。</p>
             </div>
             <p class="p-item-top__text--price-label">販売価格</p>
-            <p class="p-item-top__text--price">¥20,000<span class="tax">（税込）</span></p>
+            <p class="p-item-top__text--price" data-infotop-html="¥30,000<span class='tax'>（税込）</span>">¥20,000<span class="tax">（税込）</span></p>
             <p class="p-item-top__text--price-note">※1年間ライセンス</p>
             <div class="btn">
-              <a href="/checkout/checkout.html" class="single_add_to_cart_button button alt">購入手続き</a>
+              <a href="/checkout/checkout.html" class="single_add_to_cart_button button alt" data-purchase-link>購入手続き</a>
             </div>
           </div>
         </div>
@@ -65,13 +66,13 @@
           </div>
         </div>
         <table class="p-item-table">
-          <tr>
-            <th>対応取引業者</th>
+          <!-- <tr>
+            <th>対応業者</th>
             <td>お問い合わせください</td>
-          </tr>
+          </tr> -->
           <tr>
             <th>対応オプション</th>
-            <td>HighLow/スプレッド</td>
+            <td>HIGH/LOW / スプレッド など</td>
           </tr>
           <tr>
             <th>対応取引時間</th>
@@ -93,13 +94,15 @@
             <td>
               ・エントリー金額変更 <br>
               ・アラート通知 <br>
-              ・マーチンON/OFF（5回まで）<br>
+              ・マーチン（5回まで）<br>
               ・マーチン金額変更<br>
               ・エントリー停止時間の設定<br>
               ・2種類のエントリーモード選択<br>
-                　1.サイン点灯後、即エントリー<br>
-                　2.サイン点灯状態で足確定後、エントリー<br>
-              ・ローソク足確定数秒前のエントリー<br>
+                　1.サイン点灯後に即エントリー<br>
+                　2.サイン点灯状態で足確定後にエントリー<br>
+              ・ローソク足確定数秒前にエントリー<br>
+              ・利確/損切設定<br>
+              ・約定拒否発生時のリトライ<br>
               ・複数通貨ペア同時エントリー<sup class="p-item-annotation"><a href="#note-multi-pair">[2]</a></sup>
             </td>
           </tr>
@@ -109,7 +112,7 @@
           <p id="note-sign" class="p-item-annotations__item"><span class="p-item-annotations__label">[1]</span>サインの型が分からない場合は、お問い合わせください。</p>
           <p id="note-multi-pair" class="p-item-annotations__item"><span class="p-item-annotations__label">[2]</span>複数通貨ペアで同時にサインを検知した場合は、1通貨ペアずつ順番にエントリーします。</p>
         </div>
-        <div class="p-item-demo">
+        <div class="p-item-demo" data-channel-hidden="infotop">
           <a href="/products/bo-autobot-demo.html" aria-label="デモはこちら"></a>
         </div>
         <div class="p-item-image-modal" aria-hidden="true">
