@@ -23,10 +23,10 @@
       "checkout_redirect": false
     },
     "infotop": {
-      "purchase_url": "https://www.infotop.jp/order.php?iid=000000",
+      "purchase_url": "https://www.infotop.jp/order.php?iid=106315",
       "hide_demo": true,
       "checkout_redirect": true
     }
   },
-  "last_commit_at": "2026-06-29T18:02:15+09:00"
+  "last_commit_at": "2026-06-29T18:12:23+09:00"
 }
