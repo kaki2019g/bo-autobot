@@ -784,6 +784,31 @@ GASには外部APIアクセス、Webhook受信、注文シート更新、メー�
 
 ブランチをマージするときは、環境設定が意図せず上書きされないように`assets/config/gas-env.json`の差分を必ず確認してください。
 
+### developとmasterへの一括反映
+
+現在の差分を`develop`へコミットし、`master`へマージして両ブランチをプッシュする場合は、次のコマンドを実行します。
+
+```bash
+node scripts/publish-all.mjs
+```
+
+変更対象と自動生成されるコミットメッセージだけを確認する場合は、`--dry-run`を指定します。
+
+```bash
+node scripts/publish-all.mjs --dry-run
+```
+
+このスクリプトは次の処理を行います。
+
+1. 実行ブランチが`develop`であり、ローカルの`develop`と`master`がリモートと同期済みか確認する
+2. `last_commit_at`を実行時刻へ更新し、差分の種類からコミットメッセージを自動生成する
+3. 現在の差分を`develop`へコミットする
+4. `develop`を`master`へ`--no-ff`でマージする
+5. `assets/config/gas-env.json`を`develop`では`test`、`master`では`prod`に維持する
+6. `develop`と`master`をatomic pushし、作業ブランチを`develop`へ戻す
+
+`assets/config/gas-env.json`以外で競合した場合や、ブランチがリモートと同期していない場合はプッシュせず停止します。GitHub側のブランチ保護により直接プッシュできない場合も、設定に従って停止します。
+
 ## 変更時の注意事項
 
 このプロジェクトの作業ルールは`AGENTS.md`を参照してください。
