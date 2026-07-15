@@ -119,36 +119,66 @@ async function validatePreconditions() {
     throw new Error(`developのgas-env.jsonはenv=testである必要があります。現在: ${config.env}`);
   }
 
-  for (const branch of ["develop", "master"]) {
-    const localRevision = getGitOutput(["rev-parse", branch]);
-    const remoteRevision = getGitOutput(["rev-parse", `origin/${branch}`]);
-    if (localRevision !== remoteRevision) {
-      throw new Error(`${branch}とorigin/${branch}が一致しません。先に同期状態を確認してください。`);
-    }
+  const developRelation = runGit(
+    ["merge-base", "--is-ancestor", "origin/develop", "develop"],
+    { allowFailure: true, quiet: true },
+  );
+  if (developRelation.status !== 0) {
+    throw new Error("developがorigin/developより遅れているか、履歴が分岐しています。先に同期状態を確認してください。");
+  }
+
+  const localMaster = getGitOutput(["rev-parse", "master"]);
+  const remoteMaster = getGitOutput(["rev-parse", "origin/master"]);
+  if (localMaster !== remoteMaster) {
+    throw new Error("masterとorigin/masterが一致しません。先に同期状態を確認してください。");
+  }
+
+  const remoteContentDiff = runGit(
+    ["diff", "--quiet", "origin/master", "origin/develop", "--", ".", ":(exclude)assets/config/gas-env.json"],
+    { allowFailure: true, quiet: true },
+  );
+  if (remoteContentDiff.status === 1) {
+    throw new Error("リモートのmasterとdevelopにgas-env.json以外の差異があります。自動マージを中止します。");
+  }
+  if (remoteContentDiff.status !== 0) {
+    throw new Error("リモートブランチの内容比較に失敗しました。");
   }
 }
 
-// 競合が設定ファイルだけの場合に限り、developの内容をprod向けに変換して解決する。
-async function resolveExpectedMergeConflict(timestamp) {
+// リモート内容の一致を確認済みの場合に限り、競合箇所へdevelopの内容を採用する。
+async function resolveMergeConflicts(timestamp) {
   const conflicts = getGitOutput(["diff", "--name-only", "--diff-filter=U"])
     .split("\n")
     .filter(Boolean);
-  const expectedPath = "assets/config/gas-env.json";
+  const configRelativePath = "assets/config/gas-env.json";
 
-  if (conflicts.length === 0) {
-    const developConfig = getGitOutput(["show", `develop:${expectedPath}`]);
-    await writeEnvironmentConfig("prod", timestamp, developConfig);
-    runGit(["add", expectedPath]);
-    return;
+  for (const conflictPath of conflicts) {
+    if (conflictPath === configRelativePath) {
+      continue;
+    }
+
+    const existsInDevelop = runGit(["cat-file", "-e", `develop:${conflictPath}`], {
+      allowFailure: true,
+      quiet: true,
+    });
+    if (existsInDevelop.status === 0) {
+      runGit(["checkout", "develop", "--", conflictPath]);
+    } else if (existsInDevelop.status === 1) {
+      runGit(["rm", "--", conflictPath]);
+    } else {
+      throw new Error(`${conflictPath}のdevelop側データを確認できませんでした。`);
+    }
   }
 
-  if (conflicts.length !== 1 || conflicts[0] !== expectedPath) {
-    throw new Error(`自動解決できない競合があります: ${conflicts.join(", ")}`);
-  }
-
-  const developConfig = getGitOutput(["show", `develop:${expectedPath}`]);
+  const developConfig = getGitOutput(["show", `develop:${configRelativePath}`]);
   await writeEnvironmentConfig("prod", timestamp, developConfig);
-  runGit(["add", expectedPath]);
+  runGit(["add", configRelativePath]);
+}
+
+// リモート未反映のdevelopコミットに含まれるファイル一覧を取得する。
+function getAheadPaths() {
+  const output = getGitOutput(["diff", "--name-only", "origin/develop..develop"]);
+  return output ? output.split("\n").filter(Boolean) : [];
 }
 
 // masterの環境設定がprodのままか、マージコミット前に最終確認する。
@@ -160,15 +190,26 @@ async function validateProductionConfig() {
 }
 
 // dry-runではファイルやGit履歴を変更せず、公開対象と生成メッセージだけを表示する。
-async function showDryRun(paths, commitMessage) {
+async function showDryRun(workingPaths) {
   await validatePreconditions();
   runGit(["diff", "--check"]);
+  const aheadPaths = getAheadPaths();
+  const publishPaths = [...new Set([...aheadPaths, ...workingPaths])];
+  if (publishPaths.length === 0) {
+    throw new Error("コミットまたは公開対象の変更がありません。");
+  }
+
   console.log("\n[DRY RUN] 変更対象:");
-  for (const filePath of paths) {
+  for (const filePath of publishPaths) {
     console.log(`- ${filePath}`);
   }
-  console.log(`\nDevelop commit: ${commitMessage}`);
-  console.log(`Master merge: Merge develop into master (${commitMessage.replace(/^Update /, "update ")})`);
+  if (workingPaths.length > 0) {
+    console.log(`\nDevelop commit: ${createCommitMessage(workingPaths)}`);
+  } else {
+    console.log("\nDevelop commit: 既存の未プッシュコミットを使用");
+  }
+  const mergeSummary = createCommitMessage(publishPaths).replace(/^Update /, "update ");
+  console.log(`Master merge: Merge develop into master (${mergeSummary})`);
   console.log("\nファイル変更、コミット、マージ、プッシュは実行していません。");
 }
 
@@ -178,29 +219,36 @@ async function publish() {
   runGit(["fetch", "origin"]);
   await validatePreconditions();
 
-  let paths = getChangedPaths();
-  if (paths.length === 0) {
-    throw new Error("コミット対象の変更がありません。可視差分を作成してから実行してください。");
+  let workingPaths = getChangedPaths();
+  let timestamp;
+  if (workingPaths.length > 0) {
+    timestamp = createJapanTimestamp();
+    await writeEnvironmentConfig("test", timestamp);
+    workingPaths = getChangedPaths();
+    const commitMessage = createCommitMessage(workingPaths);
+    runGit(["add", "-A"]);
+    runGit(["diff", "--cached", "--check"]);
+    runGit(["commit", "-m", commitMessage]);
+  } else {
+    const config = JSON.parse(await readFile(configPath, "utf8"));
+    timestamp = config.last_commit_at;
   }
 
-  const timestamp = createJapanTimestamp();
-  await writeEnvironmentConfig("test", timestamp);
-  paths = getChangedPaths();
-  const commitMessage = createCommitMessage(paths);
-  const mergeMessage = `Merge develop into master (${commitMessage.replace(/^Update /, "update ")})`;
-
-  runGit(["add", "-A"]);
-  runGit(["diff", "--cached", "--check"]);
-  runGit(["commit", "-m", commitMessage]);
+  const publishPaths = getAheadPaths();
+  if (publishPaths.length === 0) {
+    throw new Error("公開対象となるdevelopの未プッシュコミットがありません。");
+  }
+  const mergeSummary = createCommitMessage(publishPaths).replace(/^Update /, "update ");
+  const mergeMessage = `Merge develop into master (${mergeSummary})`;
 
   let mergeStarted = false;
   try {
     runGit(["switch", "master"]);
     const mergeResult = runGit(["merge", "--no-ff", "--no-commit", "develop"], { allowFailure: true });
     mergeStarted = true;
-    await resolveExpectedMergeConflict(timestamp);
+    await resolveMergeConflicts(timestamp);
     if (mergeResult.status !== 0) {
-      console.log("gas-env.jsonの想定済み競合をprod設定で解決しました。");
+      console.log("競合箇所へdevelopの内容を採用し、gas-env.jsonをprod設定で解決しました。");
     }
     await validateProductionConfig();
     runGit(["diff", "--cached", "--check"]);
@@ -224,13 +272,9 @@ async function publish() {
 
 try {
   const changedPaths = getChangedPaths();
-  if (changedPaths.length === 0) {
-    throw new Error("コミット対象の変更がありません。");
-  }
-  const commitMessage = createCommitMessage(changedPaths);
 
   if (isDryRun) {
-    await showDryRun(changedPaths, commitMessage);
+    await showDryRun(changedPaths);
   } else {
     await publish();
   }
