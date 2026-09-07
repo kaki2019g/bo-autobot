@@ -19,6 +19,12 @@
 - フォーマットのみの無意味な変更（大量の整形）をしない
 - 既存仕様を壊す変更をテストなしで入れない
 
+## プロジェクト概要
+- BO-AutoBotの商品紹介、問い合わせ、購入手続き、決済を提供する静的Webサイト
+- フロントエンドはビルド不要の HTML / CSS / JavaScript 構成
+- サーバー側処理は Google Apps Script（GAS）が担当する
+- `package.json` は前提にしない。npm scripts ではなく、必要に応じて個別のNode.jsスクリプトを実行する
+
 ### 基本方針
 - HTML / CSS / JavaScript は原則として **ファイル分離**すること
 - 役割は以下の通りとする
@@ -26,6 +32,18 @@
   - CSS: 見た目・レイアウトのみ(レスポンシブであること)
   - JavaScript: 挙動・ロジックのみ
 - gitにpush後、現ブランチは常にdevelopにすること
+
+### ローカル確認
+- 静的サイトの確認は `node scripts/serve.mjs 8080` を使用する
+- ブラウザでは `http://127.0.0.1:8080/` を確認する
+- 共通ヘッダー・フッターは `assets/js/include.js` の読み込み挙動も含めて確認する
+
+### GAS環境設定
+- GAS環境設定は `assets/config/gas-env.json` で管理する
+- `develop` 作業時は `env` を `test` に保つ
+- `master` 本番向け作業時は `env` を `prod` にする
+- 変更適用時は `last_commit_at` を日本時間の現在時刻（ISO 8601、`+09:00`）へ更新する
+- `sales_channel`、`gas_profile`、各GASエンドポイントは明示指示がない限り変更しない
 
 ### gitにpushするときの注意事項
 | ブランチ | `gas-env.json` | 想定用途 |
@@ -38,4 +56,3 @@
 - CSS は外部 `.css` ファイルとして管理する
 - JavaScript は外部 `.js` ファイルとして管理する
 - HTML からは `<link>` / `<script src="">` により参照する
-
